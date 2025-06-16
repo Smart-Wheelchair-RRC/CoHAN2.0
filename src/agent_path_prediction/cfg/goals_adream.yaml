@@ -1,0 +1,9 @@
+window_size: 10
+goals:
+  - {name: g1, goal: [1.5, 2.0]}
+  - {name: g2, goal: [7.0, 8.0]}
+  - {name: g3, goal: [9.0, 12.5]}
+  - {name: g4, goal: [10.5, 15.0]}
+  - {name: g5, goal: [1.5, 15.0]}
+  - {name: g6, goal: [10.3, 1.5]}
+  - {name: g7, goal: [8.5, -4.5]}

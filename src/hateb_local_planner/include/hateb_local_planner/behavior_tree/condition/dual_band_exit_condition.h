@@ -1,0 +1,107 @@
+/*********************************************************************
+ *
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2025 LAAS/CNRS
+ * All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of the institute nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Author: Phani Teja Singamaneni (email:ptsingaman@laas.fr)
+ *********************************************************************/
+
+#include <ros/ros.h>
+#include <tf2/utils.h>
+
+// New
+#include <agent_path_prediction/AgentsInfo.h>
+#include <agent_path_prediction/agents_class.h>
+#include <hateb_local_planner/behavior_tree/bt_core.h>
+
+namespace hateb_local_planner {
+
+/**
+ * @brief Class implementing a condition node for dual band exit criteria
+ *
+ * This class checks conditions to determine when to exit the dual band planning mode.
+ * It monitors robot's progress and agent states to make this decision.
+ * It inherits from BT::ConditionNode to integrate with the behavior tree framework.
+ */
+class DualBandExitCondition : public BT::ConditionNode {
+ public:
+  /**
+   * @brief Constructor with condition name and configuration
+   * @param condition_name Name of the condition node
+   * @param conf Configuration for the behavior tree node
+   */
+  DualBandExitCondition(const std::string& condition_name, const BT::NodeConfiguration& conf);
+
+  /**
+   * @brief Deleted default constructor to enforce proper initialization
+   */
+  DualBandExitCondition() = delete;
+
+  /**
+   * @brief Virtual destructor for cleanup
+   */
+  ~DualBandExitCondition() override;
+
+  /**
+   * @brief Method called to evaluate the condition
+   * @return SUCCESS if dual band mode should be exited, FAILURE otherwise
+   */
+  BT::NodeStatus tick() override;
+
+  /**
+   * @brief Defines input ports for condition evaluation
+   * @return Ports list containing agents_info, distance threshold and navigation goal as inputs
+   */
+  static BT::PortsList providedPorts() {
+    // This action has a single input port called "agents_info"
+    return {BT::InputPort<agent_path_prediction::AgentsInfo>("agents_info"), BT::InputPort<double>("dist_threshold"), BT::InputPort<geometry_msgs::PoseStamped>("nav_goal")};
+  }
+
+ private:
+  /**
+   * @brief Checks if the robot has been stuck in place
+   * @return True if robot hasn't made progress, false otherwise
+   */
+  bool isRobotStuck();
+
+  // Blackboard entries
+  agent_path_prediction::AgentsInfo agents_info_;  //!< Information about agents in the environment
+  geometry_msgs::PoseStamped goal_;                //!< Current navigation goal
+  double dist_threshold_;                          //!< Distance threshold for dual band mode
+
+  // Class Variables
+  double goal_dist_;        //!< Distance to goal for progress tracking
+  ros::Time stopped_time_;  //!< Time when robot was last detected as stopped
+
+  std::string name_;  //!< Name of the node
+};
+};  // namespace hateb_local_planner

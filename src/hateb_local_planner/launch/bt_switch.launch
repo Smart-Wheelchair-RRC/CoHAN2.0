@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="hateb_local_planner" type="bt_switch" name="mode_switch_bt" args="$(find hateb_local_planner)/behavior_trees/all_modes.xml" output="screen"/>
+</launch>

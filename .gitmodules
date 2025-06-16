@@ -1,0 +1,7 @@
+
+[submodule "src/3rdparty/BehaviorTree.CPP"]
+	path = src/3rdparty/BehaviorTree.CPP
+	url = https://github.com/BehaviorTree/BehaviorTree.CPP.git
+[submodule "src/CoHAN_Navigation/simulators/gazebo-ros-actor-plugin"]
+	path = src/CoHAN_Navigation/simulators/gazebo-ros-actor-plugin
+	url = https://github.com/sphanit/gazebo-ros-actor-plugin.git

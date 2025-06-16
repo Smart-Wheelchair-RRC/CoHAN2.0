@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>invisible_humans_detection</name>
+  <version>0.1.0</version>
+  <description>The invisible_humans_detection package</description>
+  <maintainer email="ptsingaman@laas.fr">Phani Teja Singamaneni</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>angles</build_depend>
+  <build_depend>costmap_2d</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>cohan_msgs</build_depend>
+  <build_export_depend>angles</build_export_depend>
+  <build_export_depend>costmap_2d</build_export_depend>
+  <build_export_depend>geometry_msgs</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>nav_msgs</build_export_depend>
+  <build_export_depend>cohan_msgs</build_export_depend>
+  <exec_depend>angles</exec_depend>
+  <exec_depend>costmap_2d</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>cohan_msgs</exec_depend>
+
+</package>

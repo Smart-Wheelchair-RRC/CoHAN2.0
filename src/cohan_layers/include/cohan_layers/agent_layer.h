@@ -1,0 +1,204 @@
+/**********************************************************************
+ *
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2025 LAAS/CNRS
+ * All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of the institute nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Author: Phani Teja Singamaneni (email:ptsingaman@laas.fr)
+ *********************************************************************/
+
+#ifndef AGENT_LAYER_H
+#define AGENT_LAYER_H
+#include <agent_path_prediction/AgentsInfo.h>
+#include <cohan_msgs/StateArray.h>
+#include <cohan_msgs/TrackedAgents.h>
+#include <cohan_msgs/TrackedSegmentType.h>
+#include <costmap_2d/layer.h>
+#include <costmap_2d/layered_costmap.h>
+#include <dynamic_reconfigure/server.h>
+#include <ros/ros.h>
+#include <std_srvs/SetBool.h>
+#include <tf2/utils.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
+#include <boost/thread.hpp>
+
+namespace cohan_layers {
+class AgentLayer : public costmap_2d::Layer {
+ public:
+  AgentLayer() { layered_costmap_ = nullptr; }
+
+  /**
+   * @brief Initializes the agent layer
+   */
+  void onInitialize() override;
+
+  /**
+   * @brief Updates the bounds of the costmap based on agent positions
+   * @param origin_x Origin x-coordinate of the costmap
+   * @param origin_y Origin y-coordinate of the costmap
+   * @param origin_yaw Rotation angle of the costmap origin
+   * @param min_x Pointer to the minimum x-coordinate of the bounds
+   * @param min_y Pointer to the minimum y-coordinate of the bounds
+   * @param max_x Pointer to the maximum x-coordinate of the bounds
+   * @param max_y Pointer to the maximum y-coordinate of the bounds
+   */
+  void updateBounds(double origin_x, double origin_y, double origin_yaw, double* min_x, double* min_y, double* max_x, double* max_y) override;
+
+  /**
+   * @brief Updates the cost values in the costmap based on agent positions.
+   * @param master_grid Reference to the master costmap grid.
+   * @param min_i Minimum index in the i-direction defining the region to update.
+   * @param min_j Minimum index in the j-direction defining the region to update.
+   * @param max_i Maximum index in the i-direction defining the region to update.
+   * @param max_j Maximum index in the j-direction defining the region to update.
+   */
+  void updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j) override = 0;
+
+  /**
+   * @brief Updates the bounds from agent positions
+   * @param min_x Pointer to the minimum x-coordinate of the bounds
+   * @param min_y Pointer to the minimum y-coordinate of the bounds
+   * @param max_x Pointer to the maximum x-coordinate of the bounds
+   * @param max_y Pointer to the maximum y-coordinate of the bounds
+   */
+  virtual void updateBoundsFromAgents(double* min_x, double* min_y, double* max_x, double* max_y) = 0;
+
+  /**
+   * @brief Indicates whether the layer is discretized
+   * @return Always returns false as this layer is not discretized
+   */
+  static bool isDiscretized() { return false; }
+
+ protected:
+  struct AgentPoseVel {
+    int track_id;  //!< Unique identifier for the agent
+    int type;      //!< Type of the agent (e.g., human, robot)
+    int state;     //!< State of the agent
+    std_msgs::Header header;
+    geometry_msgs::Pose pose;
+    geometry_msgs::Twist velocity;
+  };
+
+  /**
+   * @brief Callback for TrackedAgents
+   * @param agents - Tracked agents data received from the topic
+   * Updates the agents_ member variable with the received data.
+   */
+  void agentsCB(const cohan_msgs::TrackedAgents& agents);
+
+  /**
+   * @brief Callback for AgentsInfo to get the agent states
+   * @param agents_info - Information about agents including their states
+   * Updates the states_ member variable with the received data.
+   */
+  void statesCB(const agent_path_prediction::AgentsInfo& agents_info);
+
+  /**
+   * @brief Callback for shutdown service. Handles the shutdown of the agent layer.
+   * @param req Service request containing the shutdown flag
+   * @param res Service response indicating success or failure
+   * @return True if shutdown successful, false otherwise
+   */
+  bool shutdownCB(std_srvs::SetBoolRequest& req, std_srvs::SetBoolResponse& res);
+
+  /**
+   * @brief Computes a 1D Gaussian value
+   * @param x Input value
+   * @param x0 Mean of the Gaussian
+   * @param A Amplitude of the Gaussian
+   * @param varx Variance of the Gaussian
+   * @return 1D Gaussian value for the given input
+   */
+  static double Guassian1D(double x, double x0, double A, double varx) {
+    double dx = x - x0;
+    return A * exp(-pow(dx, 2.0) / (2.0 * varx));
+  }
+
+  /**
+   * @brief Computes a 2D Gaussian value
+   * @param x Input x-coordinate
+   * @param y Input y-coordinate
+   * @param x0 Mean x-coordinate of the Gaussian
+   * @param y0 Mean y-coordinate of the Gaussian
+   * @param A Amplitude of the Gaussian
+   * @param varx Variance in the x-direction
+   * @param vary Variance in the y-direction
+   * @return 2D Gaussian value for the given inputs
+   */
+  static double Gaussian2D(double x, double y, double x0, double y0, double A, double varx, double vary) {
+    double dx = x - x0;
+    double dy = y - y0;
+    double d = sqrt((dx * dx) + (dy * dy));
+    double theta = atan2(dy, dx);
+    double xx = d * cos(theta);
+    double yy = d * sin(theta);
+    return A / std::max(d, 1.0) * Guassian1D(xx, 0.0, 1.0, varx) * Guassian1D(yy, 0.0, 1.0, vary);
+  }
+
+  /**
+   * @brief Computes a skewed 2D Gaussian value
+   * @param x Input x-coordinate
+   * @param y Input y-coordinate
+   * @param x0 Mean x-coordinate of the Gaussian
+   * @param y0 Mean y-coordinate of the Gaussian
+   * @param A Amplitude of the Gaussian
+   * @param varx Variance in the x-direction
+   * @param vary Variance in the y-direction
+   * @param skew_ang Skew angle for the Gaussian
+   * @return Skewed 2D Gaussian value for the given inputs
+   */
+  static double Gaussian2D_skewed(double x, double y, double x0, double y0, double A, double varx, double vary, double skew_ang) {
+    double dx = x - x0;
+    double dy = y - y0;
+    double d = sqrt((dx * dx) + (dy * dy));
+    double theta = atan2(dy, dx);
+    double xx = d * cos(theta - skew_ang);
+    double yy = d * sin(theta - skew_ang);
+    return A / std::max(d, 1.0) * Guassian1D(xx, 0.0, 1.0, varx) * Guassian1D(yy, 0.0, 1.0, vary);
+  }
+
+  ros::Subscriber agents_sub_, agents_states_sub_;  //!< ros subscribers
+  ros::ServiceServer stopmap_srv_;                  //!< ros services
+  cohan_msgs::TrackedAgents agents_;                //!< agents
+  std::map<int, int> states_;                       //!< agent_states
+  std::vector<AgentPoseVel> transformed_agents_;    //!< transformed agents
+  boost::recursive_mutex lock_;
+  bool first_time_, reset_, shutdown_;                                   //!< flags
+  ros::Time last_time_;                                                  //!< time checks
+  double last_min_x_, last_min_y_, last_max_x_, last_max_y_;             //!< min and max x and y values for the costmap
+  double radius_, amplitude_, covar_, cutoff_;                           //!< parameters for the gaussian
+  double robot_radius_, agent_radius_;                                   //!< radii for the agents
+  std::string ns_, tracked_agents_sub_topic_, agents_states_sub_topic_;  //!< ROS namespace and topic names
+};
+}  // namespace cohan_layers
+
+#endif  // AGENT_LAYERS_H
