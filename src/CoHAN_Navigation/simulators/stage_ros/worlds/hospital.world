@@ -377,7 +377,7 @@ window
 floorplan
 (
   name "hospital"
-  bitmap "maps/hospital_map_basic.pgm"
+  bitmap "maps/hospital.pgm"
   size [40.87 50.02 2.0 ]
   pose [20.435 25.01 0.000 0.000 ]
   gui_move 0

@@ -121,8 +121,8 @@ weight_agent_acc_lim_x: 2
 weight_agent_acc_lim_y: 2
 weight_acc_lim_theta: 1
 weight_agent_acc_lim_theta: 2
-weight_kinematics_nh: 1.0
-weight_kinematics_forward_drive: 1.0
+weight_kinematics_nh: 1000.0
+weight_kinematics_forward_drive: 10.0
 weight_kinematics_turning_radius: 0
 weight_optimaltime: 1.0
 weight_agent_optimaltime: 3.0
@@ -141,19 +141,6 @@ weight_shortest_path: 1.0
 selection_alternative_time_cost: False
 cap_optimaltime_penalty: True
 
-# Homotopy Class Planner
-enable_homotopy_class_planning: False
-enable_multithreading: True
-simple_exploration: True
-max_number_classes: 4
-roadmap_graph_no_samples: 15
-roadmap_graph_area_width: 5
-h_signature_prescaler: 0.5
-h_signature_threshold: 0.1
-obstacle_keypoint_offset: 0.1
-obstacle_heading_threshold: 0.45
-visualize_hc_graph: True
-
 # Visualization
 pose_array_z_scale: 0.5
 publish_agents_global_plans: true
@@ -165,7 +152,3 @@ publish_robot_local_plan: true
 publish_robot_local_plan_fp_poses: true
 publish_robot_local_plan_poses: true
 
-# approach
-approach_id: 1
-approach_dist: 1.0
-approach_angle: 3.14
