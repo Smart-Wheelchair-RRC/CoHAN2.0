@@ -1,11 +1,11 @@
 *__pycache__*
 *.pyc
-*build*
-*.cache*
-*log*
+*build/*
+*.cache/*
+*log/*
 *docs/*docs*
 /install/
-*devel*
-*logs*
+*devel/*
+*logs/*
 *.catkin_tools*
 
