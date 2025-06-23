@@ -62,10 +62,6 @@ if(DEFINED ENV{ROS_VERSION} AND "$ENV{ROS_VERSION}" STREQUAL "2")
     DESTINATION lib/${PROJECT_NAME}
   )
 
-  add_executable(run_sim src/run_sim.cpp)
-  target_link_libraries(run_sim ${catkin_LIBRARIES} ${SDL2_LIBRARIES})
-  install(TARGETS run_sim DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
   ament_package()
 
 else()
@@ -112,9 +108,7 @@ else()
   )
 
   add_executable(run_sim src/run_sim.cpp)
-  target_link_libraries(run_sim ${catkin_LIBRARIES} ${SDL2_LIBRARIES})
+  target_link_libraries(run_sim ${catkin_LIBRARIES} SDL2 yaml X11)
   install(TARGETS run_sim DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-  install(TARGETS run_sim RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
 
 endif()

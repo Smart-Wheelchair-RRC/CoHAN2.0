@@ -272,7 +272,11 @@ static bool** load_occupancy_grid_pgm(const char* filename, int* w, int* h) {
     for (int y = 0; y < *h; y++) {
       for (int x = 0; x < *w; x++) {
         int val;
-        fscanf(f, "%d", &val);
+        int result = fscanf(f, "%d", &val);
+        if (result != 1) {
+            fprintf(stderr, "Error reading value from PGM file\n");
+            return NULL;
+        }
         grid[x][y] = (val < maxval / 2);
       }
     }

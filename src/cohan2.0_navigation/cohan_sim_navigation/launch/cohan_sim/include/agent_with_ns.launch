@@ -2,23 +2,21 @@
   <!-- Node start delay to avoid crashing of navigation node -->
   <arg name="ns" default=""/>
   <arg name="node_start_delay" default="4.0" />
-  <arg name="localize" default="fake"/>
   <arg name="num_agents" default="2"/>
 
   <group ns="$(arg ns)">
-    <include file="$(find cohan_stage_navigation)/launch/stage_pr2_multi_launch/include/agent_tracking.launch">
+    <include file="$(find cohan_sim_navigation)/launch/cohan_sim/include/agent_tracking.launch">
       <arg name="ns" value="$(arg ns)"/>
       <arg name="num_agents" value="$(arg num_agents)"/>
     </include>
 
-    <include file="$(find cohan_stage_navigation)/launch/stage_pr2_multi_launch/include/move_base_nav.launch">
+    <include file="$(find cohan_sim_navigation)/launch/cohan_sim/include/move_base_nav.launch">
       <arg name="ns" value="$(arg ns)"/>
       <arg name="node_start_delay" value="$(arg node_start_delay)"/>
     </include>
 
-    <include file="$(find cohan_stage_navigation)/launch/stage_pr2_multi_launch/include/localization.launch">
+    <include file="$(find cohan_sim_navigation)/launch/cohan_sim/include/localization.launch">
       <arg name="ns" value="$(arg ns)"/>
-      <arg name="localize" value="$(arg localize)"/>
     </include>
   </group>
 

@@ -428,8 +428,9 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-try:
-    running = True
+# Define the simulation loop as a separate function
+def simulation_loop():
+    global running, sim_time
     next_step_time = time.time() + SIM_STEP
     while running:
         now = time.time()
@@ -437,14 +438,11 @@ try:
             time.sleep(next_step_time - now)
             now = time.time()
         elif now > next_step_time + SIM_STEP:
-            # If we overrun by more than one step, reset to avoid burst
             next_step_time = now + SIM_STEP
         else:
             next_step_time += SIM_STEP
-        # start_sim = time.time()
+
         lib.step_simulation()
-        # end_sim = time.time()
-        # print("Sim time = ", end_sim-start_sim)
         sim_time += SIM_STEP
 
         # Publish /clock for ROS1
@@ -468,7 +466,6 @@ try:
                 x, y, theta, vx, vy, vth, head_yaw = state[0], state[1], state[2], state[3], state[4], state[5], state[6]
                 timestamp = None
                 max_range = float(ent.get('laser_range'))
-                # Publish TF, odom, and scan at every simulation step
                 if HAS_ROS1 and idx < len(ros1_wrappers):
                     wrapper = ros1_wrappers[idx]
                     timestamp = rospy.Time.from_sec(sim_time)
@@ -485,6 +482,15 @@ try:
                         wrapper.publish_scan(ranges, max_range, -float(ent.get('laser_angle'))/2, float(ent.get('laser_angle'))/2, float(ent.get('laser_angle'))/(float(ent.get('laser_resolution'))-1), timestamp)
         if HAS_ROS2:
             ros2_executor.spin_once(timeout_sec=0.0)
+
+# Start the simulation loop in a separate thread
+simulation_thread = threading.Thread(target=simulation_loop)
+simulation_thread.start()
+
+try:
+    running = True
+    # Wait for the simulation thread to finish
+    simulation_thread.join()
 except KeyboardInterrupt:
     print("KeyboardInterrupt received, exiting...")
 finally:

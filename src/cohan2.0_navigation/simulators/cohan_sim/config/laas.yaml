@@ -28,7 +28,7 @@ entities:
     color: [150, 75, 0, 255]
     use_keyboard: false
     use_differential: false
-    use_laser: false
+    use_laser: true
     laser_range: 7
     laser_resolution: 1081
     laser_angle: 4.71239

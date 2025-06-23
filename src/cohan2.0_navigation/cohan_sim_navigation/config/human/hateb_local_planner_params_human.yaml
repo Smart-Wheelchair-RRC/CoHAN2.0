@@ -1,5 +1,5 @@
-odom_topic: /human/odom
-map_frame: human/odom
+odom_topic: odom
+map_frame: odom
 
 planning_mode: 1
 
