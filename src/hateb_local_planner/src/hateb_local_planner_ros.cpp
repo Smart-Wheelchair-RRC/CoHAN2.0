@@ -984,10 +984,9 @@ bool HATebLocalPlannerROS::transformGlobalPlan(const tf2_ros::Buffer &tf, const 
     tf.transform(global_pose, robot_pose, plan_pose.header.frame_id, ros::Duration(0.05));
 
     // we'll discard points on the plan that are outside the local costmap
-    double dist_threshold = std::max(costmap.getSizeInCellsX() * costmap.getResolution() / 2.0, costmap.getSizeInCellsY() * costmap.getResolution() / 2.0) * 2.0;
-    // dist_threshold *= 0.85; // just consider 85% of the costmap size to
-    // better incorporate point obstacle that are located on the border of the
-    // local costmap
+    double dist_threshold = std::max(costmap.getSizeInCellsX() * costmap.getResolution() / 2.0, costmap.getSizeInCellsY() * costmap.getResolution() / 2.0) * 1.0;
+    // dist_threshold *= 0.90; // just consider 90% of the costmap size to better incorporate point obstacle that are located on the border of the local costmap
+    // Planning radius should be within this range (can be adjusted from local costmap params)
     dist_threshold *= 0.9;
 
     int i = 0;
