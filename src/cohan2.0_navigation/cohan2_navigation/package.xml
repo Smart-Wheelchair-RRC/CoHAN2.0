@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>cohan_navigation</name>
+  <name>cohan2_navigation</name>
   <version>0.0.1</version>
-  <description>configuration and launch files for cohan_navigation</description>
+  <description>configuration and launch files for cohan2_navigation</description>
 
   <maintainer email="ptsingaman@laas.fr">Phani Teja Singamaneni</maintainer>
 
