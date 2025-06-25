@@ -765,7 +765,8 @@ bool HATebLocalPlannerROS::tickTreeAndUpdatePlans(const geometry_msgs::PoseStamp
       PlanStartVelGoalVel plan_start_vel_goal_vel;
       plan_start_vel_goal_vel.plan = agent_plan_combined.plan_to_optimize;
       plan_start_vel_goal_vel.start_vel = transformed_vel.twist;
-      plan_start_vel_goal_vel.nominal_vel = std::max(0.3, agents_ptr_->getNominalVels()[predicted_agents_poses.id - 1]);  // update this
+      std::cout << agents_ptr_->getNominalVels()[agent_plan_combined.id] << std::endl;
+      plan_start_vel_goal_vel.nominal_vel = std::max(0.3, agents_ptr_->getNominalVels()[predicted_agents_poses.id]);  // update this
       plan_start_vel_goal_vel.isMode = isMode_;
       if (agent_plan_combined.plan_after.size() > 0) {
         plan_start_vel_goal_vel.goal_vel = transformed_vel.twist;
@@ -1807,7 +1808,7 @@ bool HATebLocalPlannerROS::optimizeStandalone(cohan_msgs::Optimize::Request &req
       PlanStartVelGoalVel plan_start_vel_goal_vel;
       plan_start_vel_goal_vel.plan = agent_plan_combined.plan_to_optimize;
       plan_start_vel_goal_vel.start_vel = transformed_vel.twist;
-      plan_start_vel_goal_vel.nominal_vel = std::max(0.3, agents_ptr_->getNominalVels()[agent_plan_combined.id - 1]);  // update this
+      plan_start_vel_goal_vel.nominal_vel = std::max(0.3, agents_ptr_->getNominalVels()[agent_plan_combined.id]);  // update this
       if (agent_plan_combined.plan_after.size() > 0) {
         plan_start_vel_goal_vel.goal_vel = transformed_vel.twist;
       }
@@ -1841,7 +1842,7 @@ bool HATebLocalPlannerROS::optimizeStandalone(cohan_msgs::Optimize::Request &req
         PlanStartVelGoalVel plan_start_vel_goal_vel;
         plan_start_vel_goal_vel.plan = agent_plan_combined.plan_to_optimize;
         plan_start_vel_goal_vel.start_vel = transformed_vel.twist;
-        plan_start_vel_goal_vel.nominal_vel = std::max(0.3, agents_ptr_->getNominalVels()[agent_plan_combined.id - 1]);  // update this
+        plan_start_vel_goal_vel.nominal_vel = std::max(0.3, agents_ptr_->getNominalVels()[agent_plan_combined.id]);  // update this
         if (agent_plan_combined.plan_after.size() > 0) {
           plan_start_vel_goal_vel.goal_vel = transformed_vel.twist;
         }
