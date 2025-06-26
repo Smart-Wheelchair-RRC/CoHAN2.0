@@ -354,7 +354,6 @@ define floorplan model
 
   gui_nose 0
   gui_grid 0
-  gui_move 0  
 
   gui_outline 1
   gripper_return 0
@@ -377,19 +376,13 @@ window
 # load an environment bitmap
 floorplan
 (
-  name "open"
-  bitmap "maps/open_space.pgm"
-  size [46.4 28.8 2.0 ]
-  pose [18.176 4.366 0.000 0.000]
+  name "simple_junction"
+  bitmap "maps/empty.pgm"
+  size [9.6 9.6 2.0 ]
+  pose [0 0 0.000 0.000]
 )
 
 # throw in a robot (always the robot first)
-pr2( pose [ 2.0 2.0 0 0 ] name "pr2" color "gray")
-human( pose [ 2.5 6.5 0 0 ] name "human1" color "blue")
-human( pose [ 4.0 4.0 0 0 ] name "human2" color "green")
-#human( pose [ 7.0 5.3 0 0 ] name "human3" color "red")
-#human( pose [ 12.2 6.87 0 0 ] name "human4" color "cyan")
-#human( pose [ 17.5 5.0 0 0 ] name "human5" color "yellow")
-#human( pose [ 22.0 8.4 0 0 ] name "human6" color "black")
-#human( pose [ 37.0 5.5 0 0 ] name "human7" color "orange")
-#human( pose [ 28.5 1.7 0 0 ] name "human8" color "magenta")
+pr2( pose [ 1.0 0.0 0 180.0 ] name "pr2" color "gray")
+human( pose [-1.0 0.0 0 0 ] name "human1" color "blue")
+

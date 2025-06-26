@@ -2,10 +2,13 @@ cmake_minimum_required(VERSION 3.1.8)
 cmake_policy(SET CMP0057 NEW)
 
 project(cohan_sim)
-option(BUILD_LIBSIM "Build libsim shared library" ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FindPkgConfig)
+
 if(DEFINED ENV{ROS_VERSION} AND "$ENV{ROS_VERSION}" STREQUAL "2")
+
   # ROS 2 setup
   find_package(ament_cmake REQUIRED)
   find_package(rclpy REQUIRED)
@@ -14,57 +17,34 @@ if(DEFINED ENV{ROS_VERSION} AND "$ENV{ROS_VERSION}" STREQUAL "2")
   find_package(sensor_msgs REQUIRED)
   find_package(tf2_ros REQUIRED)
   find_package(ament_cmake_python REQUIRED)
-
+  find_package(X11 REQUIRED)
 
   pkg_check_modules(SDL2 REQUIRED sdl2)
 
   include_directories(
     ${SDL2_INCLUDE_DIRS}
+    include
   )
 
-  # Create lib/ directory
-  file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-
-  if(BUILD_LIBSIM)
-    add_custom_command(
-      OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/lib/libsim.so
-      COMMAND gcc -shared -fPIC -o ${CMAKE_CURRENT_SOURCE_DIR}/lib/libsim.so ${CMAKE_CURRENT_SOURCE_DIR}/src/sim.c -lSDL2 -lm -lyaml
-      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/sim.c
-      COMMENT "Building libsim.so"
-    )
-
-    add_custom_target(build_sim_lib ALL
-      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libsim.so
-    )
-
-    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/lib/libsim.so
-      DESTINATION lib
-    )
-  endif()
-
-  # Install the already existing libsim in ros2
-  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/lib/libsim.so
-    DESTINATION share/${PROJECT_NAME}/lib
-  )
-
-  install(DIRECTORY config
-    DESTINATION share/${PROJECT_NAME}/
-  )
-
-  install(DIRECTORY maps
-    DESTINATION share/${PROJECT_NAME}/
-  )
-
-  ament_python_install_package(${PROJECT_NAME})
-
-  install(PROGRAMS
-    src/run_sim.py
-    DESTINATION lib/${PROJECT_NAME}
-  )
+  # Add sim.cpp as a library
+  add_library(libsim SHARED src/sim.cpp)
+  target_link_libraries(libsim ${SDL2_LIBRARIES} yaml-cpp X11)
 
   ament_package()
 
 else()
+
+  ## Check the version of ubuntu to support Simulators
+  execute_process(
+    COMMAND lsb_release -rs
+    OUTPUT_VARIABLE UBUNTU_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  if(UBUNTU_VERSION MATCHES "^18")
+    add_definitions(-DUBUNTU_18)
+  endif()
+
   # ROS 1 setup
   find_package(catkin REQUIRED COMPONENTS
     rospy
@@ -73,42 +53,26 @@ else()
     sensor_msgs
     tf2_ros
   )
-
+  find_package(X11 REQUIRED)
   pkg_check_modules(SDL2 REQUIRED sdl2)
 
-  catkin_package()
+  catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES  cohan_sim
+  )
 
   include_directories(
     ${catkin_INCLUDE_DIRS}
     ${SDL2_INCLUDE_DIRS}
+    include
   )
 
-  file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
+  # Add sim.cpp as a library (uses simros node)
+  add_library(libsim SHARED src/sim.cpp)
+  target_link_libraries(libsim ${SDL2_LIBRARIES} yaml-cpp X11) 
 
-  if(BUILD_LIBSIM)
-    add_custom_command(
-      OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/lib/libsim.so
-      COMMAND gcc -shared -fPIC -o ${CMAKE_CURRENT_SOURCE_DIR}/lib/libsim.so ${CMAKE_CURRENT_SOURCE_DIR}/src/sim.c -lSDL2 -lm -lyaml
-      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/sim.c
-      COMMENT "Building libsim.so"
-    )
-
-    add_custom_target(build_sim_lib ALL
-      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libsim.so
-    )
-
-    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/lib/libsim.so
-      DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    )
-  endif()
-
-  catkin_install_python(PROGRAMS
-    src/run_sim.py
-    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  )
-
-  add_executable(run_sim src/run_sim.cpp)
-  target_link_libraries(run_sim ${catkin_LIBRARIES} SDL2 yaml X11)
-  install(TARGETS run_sim DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  ## Add the executable for rosnode wrapper
+  add_executable(simros_node src/simros.cpp)
+  target_link_libraries(simros_node ${catkin_LIBRARIES} ${SDL2_LIBRARIES} libsim)
 
 endif()

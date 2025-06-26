@@ -1,17 +1,19 @@
-image: junctions.pgm
-resolution: 0.050000
-origin: [0, 0, 0.000000]
-negate: 0
+image: hospital.pgm
+resolution: 0.061
+origin: [0.0, 0.0, 0.0]
 occupied_thresh: 0.65
 free_thresh: 0.196
+negate: 0
+
+## For the simulator
 speed: 2.0              # Keyboard linear speed (m/s)
 angular_speed: 1.5708   # Keyboard angular speed (rad/s), default pi/2
 
 entities:
   - name: robot
-    start_x: 2
-    start_y: 2
-    start_theta: -3
+    start_x: 10.5
+    start_y: 2.0
+    start_theta: 1.57
     radius: 0.3
     color: [0, 100, 255, 255]
     use_keyboard: true
@@ -21,9 +23,9 @@ entities:
     laser_resolution: 1081
     laser_angle: 4.71239
   - name: human1
-    start_x: 3
-    start_y: 1
-    start_theta: 0
+    start_x: 2.5
+    start_y: 3.0
+    start_theta: 1.57
     radius: 0.3
     color: [150, 75, 0, 255]
     use_keyboard: false
@@ -33,8 +35,8 @@ entities:
     laser_resolution: 1081
     laser_angle: 4.71239
   - name: human2
-    start_x: 7.5
-    start_y: 5
+    start_x: 2
+    start_y: 12
     start_theta: 1.57
     radius: 0.3
     color: [150, 75, 0, 255]
