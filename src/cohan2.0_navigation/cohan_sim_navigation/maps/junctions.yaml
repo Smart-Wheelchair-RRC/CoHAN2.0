@@ -11,7 +11,7 @@ entities:
   - name: robot
     start_x: 2
     start_y: 2
-    start_theta: -3
+    start_theta: 1.57
     radius: 0.3
     color: [0, 100, 255, 255]
     use_keyboard: true
