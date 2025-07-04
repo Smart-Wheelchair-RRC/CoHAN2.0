@@ -161,11 +161,7 @@ void HATebConfig::loadRosParamFromNodeHandle(const ros::NodeHandle& nh) {
   nh.param("weight_agent_viapoint", optim.weight_agent_viapoint, optim.weight_agent_viapoint);
   nh.param("weight_agent_robot_safety", optim.weight_agent_robot_safety, optim.weight_agent_robot_safety);
   nh.param("weight_agent_agent_safety", optim.weight_agent_agent_safety, optim.weight_agent_agent_safety);
-  nh.param("weight_agent_robot_ttc", optim.weight_agent_robot_ttc, optim.weight_agent_robot_ttc);
-  nh.param("weight_agent_robot_ttcplus", optim.weight_agent_robot_ttcplus, optim.weight_agent_robot_ttcplus);
   nh.param("weight_agent_robot_rel_vel", optim.weight_agent_robot_rel_vel, optim.weight_agent_robot_rel_vel);
-  nh.param("agent_robot_ttc_scale_alpha", optim.agent_robot_ttc_scale_alpha, optim.agent_robot_ttc_scale_alpha);
-  nh.param("agent_robot_ttcplus_scale_alpha", optim.agent_robot_ttcplus_scale_alpha, optim.agent_robot_ttcplus_scale_alpha);
   nh.param("weight_agent_robot_visibility", optim.weight_agent_robot_visibility, optim.weight_agent_robot_visibility);
   nh.param("disable_warm_start", optim.disable_warm_start, optim.disable_warm_start);
   nh.param("disable_rapid_omega_chage", optim.disable_rapid_omega_chage, optim.disable_rapid_omega_chage);
@@ -174,22 +170,15 @@ void HATebConfig::loadRosParamFromNodeHandle(const ros::NodeHandle& nh) {
   // Hateb
   nh.param("use_agent_robot_safety_c", hateb.use_agent_robot_safety_c, hateb.use_agent_robot_safety_c);
   nh.param("use_agent_agent_safety_c", hateb.use_agent_agent_safety_c, hateb.use_agent_agent_safety_c);
-  nh.param("use_agent_robot_ttc_c", hateb.use_agent_robot_ttc_c, hateb.use_agent_robot_ttc_c);
-  nh.param("use_agent_robot_ttcplus_c", hateb.use_agent_robot_ttcplus_c, hateb.use_agent_robot_ttcplus_c);
-  nh.param("scale_agent_robot_ttc_c", hateb.scale_agent_robot_ttc_c, hateb.scale_agent_robot_ttc_c);
-  nh.param("scale_agent_robot_ttcplus_c", hateb.scale_agent_robot_ttcplus_c, hateb.scale_agent_robot_ttcplus_c);
   nh.param("use_agent_robot_rel_vel_c", hateb.use_agent_robot_rel_vel_c, hateb.use_agent_robot_rel_vel_c);
   nh.param("add_invisible_humans", hateb.add_invisible_humans, hateb.add_invisible_humans);
   nh.param("use_agent_robot_visi_c", hateb.use_agent_robot_visi_c, hateb.use_agent_robot_visi_c);
   nh.param("use_agent_elastic_vel", hateb.use_agent_elastic_vel, hateb.use_agent_elastic_vel);
   nh.param("min_agent_robot_dist", hateb.min_agent_robot_dist, hateb.min_agent_robot_dist);
   nh.param("min_agent_agent_dist", hateb.min_agent_agent_dist, hateb.min_agent_agent_dist);
-  nh.param("ttc_threshold", hateb.ttc_threshold, hateb.ttc_threshold);
   nh.param("agent_pose_prediction_reset_time", hateb.pose_prediction_reset_time, hateb.pose_prediction_reset_time);
   nh.param("rel_vel_cost_threshold", hateb.rel_vel_cost_threshold, hateb.rel_vel_cost_threshold);
   nh.param("invisible_human_threshold", hateb.invisible_human_threshold, hateb.invisible_human_threshold);
-  nh.param("ttcplus_threshold", hateb.ttcplus_threshold, hateb.ttcplus_threshold);
-  nh.param("ttcplus_timer", hateb.ttcplus_timer, hateb.ttcplus_timer);
 
   // Recovery
   nh.param("shrink_horizon_backup", recovery.shrink_horizon_backup, recovery.shrink_horizon_backup);
@@ -210,13 +199,6 @@ void HATebConfig::loadRosParamFromNodeHandle(const ros::NodeHandle& nh) {
   nh.param("publish_agents_local_plan_poses", visualization.publish_agents_local_plan_poses, visualization.publish_agents_local_plan_poses);
   nh.param("publish_agents_local_plan_fp_poses", visualization.publish_agents_local_plan_fp_poses, visualization.publish_agents_local_plan_fp_poses);
   nh.param("pose_array_z_scale", visualization.pose_array_z_scale, visualization.pose_array_z_scale);
-
-  // // approach
-  // nh.param("approach_id", approach.approach_id, approach.approach_id);
-  // nh.param("approach_dist", approach.approach_dist, approach.approach_dist);
-  // nh.param("approach_angle", approach.approach_angle, approach.approach_angle);
-  // nh.param("approach_dist_tolerance", approach.approach_dist_tolerance, approach.approach_dist_tolerance);
-  // nh.param("approach_angle_tolerance", approach.approach_angle_tolerance, approach.approach_angle_tolerance);
 
   checkParameters();
   checkDeprecated(nh);
@@ -325,13 +307,9 @@ void HATebConfig::reconfigure(HATebLocalPlannerReconfigureConfig& cfg) {
   optim.weight_agent_viapoint = cfg.weight_agent_viapoint;
   optim.weight_agent_robot_safety = cfg.weight_agent_robot_safety;
   optim.weight_agent_agent_safety = cfg.weight_agent_agent_safety;
-  optim.weight_agent_robot_ttc = cfg.weight_agent_robot_ttc;
-  optim.weight_agent_robot_ttcplus = cfg.weight_agent_robot_ttcplus;
   optim.weight_agent_robot_rel_vel = cfg.weight_agent_robot_rel_vel;
   optim.weight_invisible_human = cfg.weight_invisible_human;
   optim.weight_agent_robot_visibility = cfg.weight_agent_robot_visibility;
-  optim.agent_robot_ttc_scale_alpha = cfg.agent_robot_ttc_scale_alpha;
-  optim.agent_robot_ttcplus_scale_alpha = cfg.agent_robot_ttcplus_scale_alpha;
   optim.disable_warm_start = cfg.disable_warm_start;
   optim.disable_rapid_omega_chage = cfg.disable_rapid_omega_chage;
   optim.omega_chage_time_seperation = cfg.omega_chage_time_seperation;
@@ -339,19 +317,12 @@ void HATebConfig::reconfigure(HATebLocalPlannerReconfigureConfig& cfg) {
   // Hateb
   hateb.use_agent_robot_safety_c = cfg.use_agent_robot_safety_c;
   hateb.use_agent_agent_safety_c = cfg.use_agent_agent_safety_c;
-  hateb.use_agent_robot_ttc_c = cfg.use_agent_robot_ttc_c;
-  hateb.use_agent_robot_ttcplus_c = cfg.use_agent_robot_ttcplus_c;
-  hateb.scale_agent_robot_ttc_c = cfg.scale_agent_robot_ttc_c;
-  hateb.scale_agent_robot_ttcplus_c = cfg.scale_agent_robot_ttcplus_c;
   hateb.use_agent_robot_rel_vel_c = cfg.use_agent_robot_rel_vel_c;
   hateb.add_invisible_humans = cfg.add_invisible_humans;
   hateb.use_agent_robot_visi_c = cfg.use_agent_robot_visi_c;
   hateb.use_agent_elastic_vel = cfg.use_agent_elastic_vel;
   hateb.min_agent_robot_dist = cfg.min_agent_robot_dist;
   hateb.min_agent_agent_dist = cfg.min_agent_agent_dist;
-  hateb.ttc_threshold = cfg.ttc_threshold;
-  hateb.ttcplus_threshold = cfg.ttcplus_threshold;
-  hateb.ttcplus_timer = cfg.ttcplus_timer;
   hateb.rel_vel_cost_threshold = cfg.rel_vel_cost_threshold;
   hateb.invisible_human_threshold = cfg.invisible_human_threshold;
   hateb.visibility_cost_threshold = cfg.visibility_cost_threshold;
@@ -371,13 +342,6 @@ void HATebConfig::reconfigure(HATebLocalPlannerReconfigureConfig& cfg) {
   visualization.publish_agents_local_plan_poses = cfg.publish_agents_local_plan_poses;
   visualization.publish_agents_local_plan_fp_poses = cfg.publish_agents_local_plan_fp_poses;
   visualization.pose_array_z_scale = cfg.pose_array_z_scale;
-
-  // // approach
-  // approach.approach_id = cfg.approach_id;
-  // approach.approach_dist = cfg.approach_dist;
-  // approach.approach_angle = cfg.approach_angle;
-  // approach.approach_dist_tolerance = cfg.approach_dist_tolerance;
-  // approach.approach_angle_tolerance = cfg.approach_angle_tolerance;
 
   checkParameters();
 }

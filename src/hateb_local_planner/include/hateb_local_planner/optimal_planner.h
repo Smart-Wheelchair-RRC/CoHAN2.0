@@ -779,29 +779,6 @@ class TebOptimalPlanner : public PlannerInterface {
   void AddEdgesAgentAgentSafety();
 
   /**
-   * @brief Add edges for Time To Collision (TTC) constraints between agents and robot
-   *
-   * Adds cost function edges that consider the Time To Collision metric
-   * between the robot and agents, helping prevent potential future collisions.
-   * @see EdgeAgentRobotTTC
-   * @see buildGraph
-   * @see optimizeGraph
-   */
-  void AddEdgesAgentRobotTTC();
-
-  /**
-   * @brief Add enhanced TTC edges with additional safety considerations
-   *
-   * Adds cost function edges for an enhanced version of Time To Collision
-   * that includes additional safety considerations beyond basic TTC. We
-   * accumulate the error over time to to reduce the false alarms.
-   * @see EdgeAgentRobotTTCplus
-   * @see buildGraph
-   * @see optimizeGraph
-   */
-  void AddEdgesAgentRobotTTCplus();
-
-  /**
    * @brief Add edges to control relative velocities between agents and robot
    *
    * Adds cost function edges that help the robot to exploit the existing space
