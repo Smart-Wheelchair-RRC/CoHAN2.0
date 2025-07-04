@@ -62,8 +62,8 @@ void StaticAgentLayer::updateBoundsFromAgents(double* min_x, double* min_y, doub
 }
 
 void StaticAgentLayer::loadRosParamFromNodeHandle(const ros::NodeHandle& private_nh) {
-  private_nh.param("robot_radius", robot_radius_, 0.46);
-  private_nh.param("agent_radius", agent_radius_, 0.31);
+  private_nh.param("robot_radius", robot_radius_, 0.47);
+  private_nh.param("agent_radius", agent_radius_, 0.30);
 }
 
 void StaticAgentLayer::updateCosts(costmap_2d::Costmap2D& /*master_grid*/, int min_i, int min_j, int max_i, int max_j) {

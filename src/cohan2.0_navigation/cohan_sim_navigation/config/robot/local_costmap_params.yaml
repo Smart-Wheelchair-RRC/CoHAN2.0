@@ -7,7 +7,7 @@ origin_x: 0.0
 origin_y: 0.0
 global_frame: odom
 robot_base_frame: base_link
-footprint: [[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.46, 0.0], [0.325, -0.325]]
+footprint: [[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.47, 0.0], [0.325, -0.325]]
 footprint_padding: 0.01
 rolling_window: true
 plugins:
@@ -28,5 +28,5 @@ static:
   enabled:              true
   map_topic:            "/map"
 human_layer_static:
-  robot_radius: 0.46
-  agent_radius: 0.31
+  robot_radius: 0.47
+  agent_radius: 0.30

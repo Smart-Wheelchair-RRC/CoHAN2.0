@@ -91,10 +91,8 @@ void HATebConfig::loadRosParamFromNodeHandle(const ros::NodeHandle& nh) {
 
   // Agent
   nh.param("agent_radius", agent.radius, agent.radius);
-  nh.param("robot_radius", agent.robot_radius, agent.robot_radius);
   nh.param("max_agent_vel_x", agent.max_vel_x, agent.max_vel_x);
   nh.param("max_agent_vel_y", agent.max_vel_y, agent.max_vel_y);
-  nh.param("nominal_agent_vel_x", agent.nominal_vel_x, agent.nominal_vel_x);
   nh.param("max_agent_vel_x_backwards", agent.max_vel_x_backwards, agent.max_vel_x_backwards);
   nh.param("max_agent_vel_theta", agent.max_vel_theta, agent.max_vel_theta);
   nh.param("agent_acc_lim_x", agent.acc_lim_x, agent.acc_lim_x);
@@ -241,7 +239,6 @@ void HATebConfig::reconfigure(HATebLocalPlannerReconfigureConfig& cfg) {
   // Agent
   agent.max_vel_x = cfg.max_agent_vel_x;
   agent.max_vel_y = cfg.max_agent_vel_y;
-  agent.nominal_vel_x = cfg.nominal_agent_vel_x;
   agent.max_vel_x_backwards = cfg.max_agent_vel_x_backwards;
   agent.max_vel_theta = cfg.max_agent_vel_theta;
   agent.acc_lim_x = cfg.agent_acc_lim_x;

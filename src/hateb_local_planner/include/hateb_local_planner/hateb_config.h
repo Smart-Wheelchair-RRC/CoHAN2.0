@@ -117,9 +117,7 @@ class HATebConfig {
   //! Agent related parameters
   struct Agent {
     double radius;               //!< Radius of the agent for collision checking
-    double robot_radius;         //!< Robot's radius for agent-robot interactions
     double max_vel_x;            //!< Maximum translational velocity of the agent
-    double nominal_vel_x;        //!< Nominal translational velocity of the agent
     double max_vel_y;            //!< Maximum strafing velocity of the agent
     double max_vel_x_backwards;  //!< Maximum backwards velocity of the agent
     double min_vel_x_backwards;  //!< Minimum backwards velocity of the agent
@@ -316,9 +314,7 @@ class HATebConfig {
 
     // Agent
     agent.radius = 0.35;
-    agent.robot_radius = 0.47;
     agent.max_vel_x = 1.3;
-    agent.nominal_vel_x = 1.1;
     agent.max_vel_y = 0.4;
     agent.max_vel_x_backwards = 0.0;
     agent.max_vel_theta = 1.1;
