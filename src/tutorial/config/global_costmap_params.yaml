@@ -2,7 +2,7 @@ publish_frequency: 5.0
 update_frequency: 10.0
 global_frame: map
 robot_base_frame: base_link
-robot_radius: 0.4
+robot_radius: 0.25
 rolling_window: false
 plugins:
   - {name: static_map, type: "costmap_2d::StaticLayer"}
@@ -13,5 +13,5 @@ plugins:
 inflater:
   inflation_radius: 0.4
 human_layer_static:
-  robot_radius: 0.4
+  robot_radius: 0.25
   agent_radius: 0.3

@@ -18,7 +18,7 @@ shrink_horizon_backup: True
 # Robot
 holonomic_robot: false
 type: 0 #(0: Robot, 1: Human)
-robot_radius: 0.47
+robot_radius: 0.25
 max_vel_y: 0.7
 acc_lim_y: 0.3
 max_vel_x: 0.7
