@@ -1,5 +1,5 @@
 odom_topic: odom
-map_frame: odom
+map_frame: /odom
 
 planning_mode: 1
 
@@ -16,9 +16,9 @@ disable_warm_start: True
 shrink_horizon_backup: True
 
 # Robot
-holonomic_robot: true
-type: 1 #(0: Robot, 1: Human)
-robot_radius: 0.3
+holonomic_robot: false
+type: 0 #(0: Robot, 1: Human)
+robot_radius: 0.25
 max_vel_y: 0.7
 acc_lim_y: 0.3
 max_vel_x: 0.7
@@ -107,8 +107,8 @@ weight_agent_acc_lim_x: 2
 weight_agent_acc_lim_y: 2
 weight_acc_lim_theta: 1
 weight_agent_acc_lim_theta: 2
-weight_kinematics_nh: 1.0
-weight_kinematics_forward_drive: 1.0
+weight_kinematics_nh: 1000.0
+weight_kinematics_forward_drive: 10.0
 weight_kinematics_turning_radius: 0
 weight_optimaltime: 1.0
 weight_agent_optimaltime: 3.0

@@ -328,8 +328,8 @@ void Agents::loadRosParamFromNodeHandle(const ros::NodeHandle &private_nh) {
   private_nh.param("planning_mode", planning_mode_, 0);
   private_nh.param("use_simulated_fov", use_simulated_fov_, false);
   private_nh.param("window_moving_avg", window_moving_avg_, WINDOW_MOVING_AVG);
-  private_nh.param("human_radius", human_radius_, HUM_RADIUS);
-  private_nh.param("robot_radius", robot_radius_, ROBOT_RADIUS);
+  private_nh.param("HATebLocalPlannerROS/agent_radius", human_radius_, HUM_RADIUS);
+  private_nh.param("HATebLocalPlannerROS/robot_radius", robot_radius_, ROBOT_RADIUS);
   private_nh.param("tracked_agents_sub_topic", tracked_agents_sub_topic_, std::string(AGENTS_SUB_TOPIC));
   private_nh.param("base_link_frame", base_link_frame_, std::string(BASE_LINK_FRAME));
   private_nh.param("map_frame", map_frame_, std::string(MAP_FRAME));

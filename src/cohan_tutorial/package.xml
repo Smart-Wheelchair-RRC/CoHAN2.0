@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>cohan_tutorial</name>
+  <version>0.0.1</version>
+  <description>configuration and launch files for cohan_tutorial</description>
+
+  <maintainer email="ptsingaman@laas.fr">Phani Teja Singamaneni</maintainer>
+
+  <author email="ptsingaman@laas.fr">Phani Teja Singamaneni</author>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- ROS1 dependencies -->
+  <depend>rospy</depend>
+
+  <!-- Python dependencies -->
+  <depend>python-yaml</depend>
+
+</package>

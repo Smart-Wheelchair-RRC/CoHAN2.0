@@ -117,9 +117,7 @@ class HATebConfig {
   //! Agent related parameters
   struct Agent {
     double radius;               //!< Radius of the agent for collision checking
-    double robot_radius;         //!< Robot's radius for agent-robot interactions
     double max_vel_x;            //!< Maximum translational velocity of the agent
-    double nominal_vel_x;        //!< Nominal translational velocity of the agent
     double max_vel_y;            //!< Maximum strafing velocity of the agent
     double max_vel_x_backwards;  //!< Maximum backwards velocity of the agent
     double min_vel_x_backwards;  //!< Minimum backwards velocity of the agent
@@ -195,60 +193,41 @@ class HATebConfig {
     double weight_prefer_rotdir;               //!< Optimization weight for preferring a specific turning direction
     double weight_adapt_factor;  //!< Some special weights (currently 'weight_obstacle') are repeatedly scaled by this factor in each outer TEB iteration (weight_new = weight_old*factor); Increasing
                                  //!< weights iteratively instead of setting a huge value a-priori leads to better numerical conditions of the underlying optimization problem.
-    double obstacle_cost_exponent;           //!< Exponent for nonlinear obstacle cost (cost = linear_cost * obstacle_cost_exponent). Set to 1 to disable nonlinear cost (default)
-    double weight_max_agent_vel_x;           //!< Optimization weight for satisfying maximum agent translational velocity
-    double weight_max_agent_vel_y;           //!< Optimization weight for satisfying maximum agent straffing velocity
-    double weight_nominal_agent_vel_x;       //!< Optimization weight for maintaining nominal agent velocity
-    double weight_max_agent_vel_theta;       //!< Optimization weight for satisfying maximum agent angular velocity
-    double weight_agent_acc_lim_x;           //!< Optimization weight for satisfying agent translational acceleration limits
-    double weight_agent_acc_lim_y;           //!< Optimization weight for satisfying agent straffing acceleration limits
-    double weight_agent_acc_lim_theta;       //!< Optimization weight for satisfying agent angular acceleration limits
-    double weight_agent_optimaltime;         //!< Optimization weight for agent trajectory transition time
-    double weight_agent_viapoint;            //!< Optimization weight for agent via-points
-    double weight_invisible_human;           //!< Optimization weight for invisible human penalties
-    double weight_agent_robot_safety;        //!< Optimization weight for agent-robot safety constraints
-    double weight_agent_agent_safety;        //!< Optimization weight for agent-agent safety constraints
-    double weight_agent_robot_ttc;           //!< Optimization weight for Time-To-Collision between agent and robot
-    double weight_agent_robot_ttcplus;       //!< Optimization weight for enhanced Time-To-Collision between agent and robot
-    double weight_agent_robot_rel_vel;       //!< Optimization weight for relative velocity constraint between agent and robot
-    double weight_agent_robot_visibility;    //!< Optimization weight for agent visibility to robot
-    double agent_robot_ttc_scale_alpha;      //!< Scaling factor for Time-To-Collision cost
-    double agent_robot_ttcplus_scale_alpha;  //!< Scaling factor for enhanced Time-To-Collision cost
-    bool disable_warm_start;                 //!< If true, disables warm start in optimization
-    bool disable_rapid_omega_chage;          //!< If true, prevents rapid changes in angular velocity
-    double omega_chage_time_seperation;      //!< Minimum time separation for angular velocity changes
-  } optim;                                   //!< Optimization related parameters
+    double obstacle_cost_exponent;         //!< Exponent for nonlinear obstacle cost (cost = linear_cost * obstacle_cost_exponent). Set to 1 to disable nonlinear cost (default)
+    double weight_max_agent_vel_x;         //!< Optimization weight for satisfying maximum agent translational velocity
+    double weight_max_agent_vel_y;         //!< Optimization weight for satisfying maximum agent straffing velocity
+    double weight_nominal_agent_vel_x;     //!< Optimization weight for maintaining nominal agent velocity
+    double weight_max_agent_vel_theta;     //!< Optimization weight for satisfying maximum agent angular velocity
+    double weight_agent_acc_lim_x;         //!< Optimization weight for satisfying agent translational acceleration limits
+    double weight_agent_acc_lim_y;         //!< Optimization weight for satisfying agent straffing acceleration limits
+    double weight_agent_acc_lim_theta;     //!< Optimization weight for satisfying agent angular acceleration limits
+    double weight_agent_optimaltime;       //!< Optimization weight for agent trajectory transition time
+    double weight_agent_viapoint;          //!< Optimization weight for agent via-points
+    double weight_invisible_human;         //!< Optimization weight for invisible human penalties
+    double weight_agent_robot_safety;      //!< Optimization weight for agent-robot safety constraints
+    double weight_agent_agent_safety;      //!< Optimization weight for agent-agent safety constraints
+    double weight_agent_robot_rel_vel;     //!< Optimization weight for relative velocity constraint between agent and robot
+    double weight_agent_robot_visibility;  //!< Optimization weight for agent visibility to robot
+    bool disable_warm_start;               //!< If true, disables warm start in optimization
+    bool disable_rapid_omega_chage;        //!< If true, prevents rapid changes in angular velocity
+    double omega_chage_time_seperation;    //!< Minimum time separation for angular velocity changes
+  } optim;                                 //!< Optimization related parameters
 
   struct Hateb {
     int planning_mode;                  //!< Mode of planning (autonomous vs human-aware)
     bool use_agent_robot_safety_c;      //!< Enable agent-robot safety constraints
     bool use_agent_agent_safety_c;      //!< Enable agent-agent safety constraints
-    bool use_agent_robot_ttc_c;         //!< Enable Time-To-Collision constraints
-    bool use_agent_robot_ttcplus_c;     //!< Enable enhanced Time-To-Collision constraints
-    bool scale_agent_robot_ttc_c;       //!< Enable scaling of Time-To-Collision constraints
-    bool scale_agent_robot_ttcplus_c;   //!< Enable scaling of enhanced Time-To-Collision constraints
     bool use_agent_robot_rel_vel_c;     //!< Enable relative velocity constraints
     bool add_invisible_humans;          //!< Include invisible humans in planning
     bool use_agent_robot_visi_c;        //!< Enable visibility constraints
     bool use_agent_elastic_vel;         //!< Enable elastic velocity constraints for agents
-    double ttc_threshold;               //!< Threshold value for Time-To-Collision
-    double ttcplus_threshold;           //!< Threshold value for enhanced Time-To-Collision
-    double ttcplus_timer;               //!< Time to accumulate before taking a decision for enhanced Time-To-Collision
     double pose_prediction_reset_time;  //!< Time after which pose prediction is reset
     double min_agent_robot_dist;        //!< Minimum distance that should be maintained agent and robot
     double min_agent_agent_dist;        //!< Minimum distance that should be maintained between agents
-    double rel_vel_cost_threshold;
-    double invisible_human_threshold;
-    double visibility_cost_threshold;
+    double rel_vel_cost_threshold;      //!< Threshold value for Relative Velocity Constraint (lower means higher reaction)
+    double invisible_human_threshold;   //!< Threshold value for Invisible Humans Constraint (higher means higher reaction)
+    double visibility_cost_threshold;   //!< Threshold value for Visibility Constraint (lower means higher reaction)
   } hateb;
-
-  // struct Approach {
-  //   int approach_id;                  //!< ID of the approach behavior
-  //   double approach_dist;             //!< Desired approach distance
-  //   double approach_angle;            //!< Desired approach angle
-  //   double approach_dist_tolerance;   //!< Tolerance for approach distance
-  //   double approach_angle_tolerance;  //!< Tolerance for approach angle
-  // } approach;
 
   //! Recovery/backup related parameters
   struct Recovery {
@@ -263,15 +242,15 @@ class HATebConfig {
 
   //! Visualization
   struct Visualization {
-    bool publish_robot_global_plan;
-    bool publish_robot_local_plan;
-    bool publish_robot_local_plan_poses;
-    bool publish_robot_local_plan_fp_poses;
-    bool publish_agents_global_plans;
-    bool publish_agents_local_plans;
-    bool publish_agents_local_plan_poses;
-    bool publish_agents_local_plan_fp_poses;
-    double pose_array_z_scale;
+    bool publish_robot_global_plan;           //!< If true, publish the global plan for the robot
+    bool publish_robot_local_plan;            //!< If true, publish the local plan for the robot
+    bool publish_robot_local_plan_poses;      //!< If true, publish poses from the robot's local plan
+    bool publish_robot_local_plan_fp_poses;   //!< If true, publish footprint (time colored and vel scaled) poses from the robot's local plan
+    bool publish_agents_global_plans;         //!< If true, publish the global plans for all agents
+    bool publish_agents_local_plans;          //!< If true, publish the local plans for all agents
+    bool publish_agents_local_plan_poses;     //!< If true, publish poses from agents' local plans
+    bool publish_agents_local_plan_fp_poses;  //!< If true, publish footprint (time colored and vel scaled) poses from agents' local plans
+    double pose_array_z_scale;                //!< Multiplier to show time on z value of pose array for agents and robot
   } visualization;
 
   /**
@@ -335,9 +314,7 @@ class HATebConfig {
 
     // Agent
     agent.radius = 0.35;
-    agent.robot_radius = 0.47;
     agent.max_vel_x = 1.3;
-    agent.nominal_vel_x = 1.1;
     agent.max_vel_y = 0.4;
     agent.max_vel_x_backwards = 0.0;
     agent.max_vel_theta = 1.1;
@@ -410,12 +387,8 @@ class HATebConfig {
     optim.weight_invisible_human = 1;
     optim.weight_agent_robot_safety = 20;
     optim.weight_agent_agent_safety = 20;
-    optim.weight_agent_robot_ttc = 20;
-    optim.weight_agent_robot_ttcplus = 20;
     optim.weight_agent_robot_rel_vel = 20;
     optim.weight_agent_robot_visibility = 20;
-    optim.agent_robot_ttc_scale_alpha = 1;
-    optim.agent_robot_ttcplus_scale_alpha = 1;
     optim.disable_warm_start = false;
     optim.disable_rapid_omega_chage = true;
     optim.omega_chage_time_seperation = 1.0;
@@ -423,17 +396,10 @@ class HATebConfig {
     // Hateb
     hateb.use_agent_robot_safety_c = true;
     hateb.use_agent_agent_safety_c = true;
-    hateb.use_agent_robot_ttc_c = true;
-    hateb.use_agent_robot_ttcplus_c = false;
-    hateb.scale_agent_robot_ttc_c = true;
-    hateb.scale_agent_robot_ttcplus_c = true;
     hateb.use_agent_robot_rel_vel_c = true;
     hateb.add_invisible_humans = true;
     hateb.use_agent_robot_visi_c = true;
     hateb.use_agent_elastic_vel = true;
-    hateb.ttc_threshold = 5.0;
-    hateb.ttcplus_threshold = 5.0;
-    hateb.ttcplus_timer = 5.0;
     hateb.pose_prediction_reset_time = 2.0;
     hateb.min_agent_robot_dist = 0.6;
     hateb.min_agent_agent_dist = 0.2;
@@ -448,7 +414,6 @@ class HATebConfig {
     recovery.oscillation_filter_duration = 10;
 
     // Visualization
-
     visualization.publish_robot_global_plan = true;
     visualization.publish_robot_local_plan = true;
     visualization.publish_robot_local_plan_poses = false;
@@ -458,13 +423,6 @@ class HATebConfig {
     visualization.publish_agents_local_plan_poses = false;
     visualization.publish_agents_local_plan_fp_poses = false;
     visualization.pose_array_z_scale = 1.0;
-
-    // approach
-    // approach.approach_id = 1;
-    // approach.approach_dist = 0.5;
-    // approach.approach_angle = 3.14;
-    // approach.approach_dist_tolerance = 0.2;
-    // approach.approach_angle_tolerance = 0.3;
   }
 
   /**

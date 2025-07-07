@@ -7,9 +7,8 @@ origin_x: 0.0
 origin_y: 0.0
 global_frame: odom
 robot_base_frame: base_link
-footprint: [[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.47, 0.0], [0.325, -0.325]]
-footprint_padding: 0.01
 rolling_window: true
+robot_radius: 0.25
 plugins:
   - {name: static, type: "costmap_2d::StaticLayer"}
   - {name: obstacles, type: "costmap_2d::ObstacleLayer"}
@@ -24,9 +23,6 @@ obstacles:
   track_unknown_space: true
 inflater:
   inflation_radius: 0.2
-static:
-  enabled:              true
-  map_topic:            "/map"
 human_layer_static:
-  robot_radius: 0.47
-  agent_radius: 0.30
+  robot_radius: 0.25
+  agent_radius: 0.3

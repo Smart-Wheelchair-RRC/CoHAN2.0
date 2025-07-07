@@ -554,7 +554,7 @@ void TebVisualization::publishAgentTrajectories(const std::vector<AgentPlanTrajC
       agent_time_to_goal.id = agent_plan_traj_combined.id;
       agent_time_to_goal_array.times_to_goal.push_back(agent_time_to_goal);
 
-      agent_time_to_goal.time_to_goal += ros::Duration(remaining_path_dist / cfg_->agent.nominal_vel_x);
+      agent_time_to_goal.time_to_goal += ros::Duration(remaining_path_dist / cfg_->agent.max_vel_x);
       agent_time_to_goal_array_full.times_to_goal.push_back(agent_time_to_goal);
     }
   }
