@@ -1,4 +1,6 @@
 /*********************************************************************
+ * Modified by Phani Teja Singamaneni in 2021
+ * Additional changes licensed under the MIT License. See LICENSE file.
  *
  * Software License Agreement (BSD License)
  *
@@ -33,7 +35,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- * Authors: Christoph Rösmann, Phani Teja Singamaneni
+ * Author: Christoph Rösmann
  *********************************************************************/
 
 #ifndef ROBOT_FOOTPRINT_MODEL_H

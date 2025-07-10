@@ -1,13 +1,12 @@
 /*********************************************************************
+ * Majorly modified by Phani Teja Singamaneni in 2021-2025
+ * Additional changes licensed under the MIT License. See LICENSE file.
  *
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2016,
  *  TU Dortmund - Institute of Control Theory and Systems Engineering.
  *  All rights reserved.
- *
- * Copyright (c) 2020 LAAS/CNRS
- * All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -37,7 +36,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Christoph Rösmann
- * Modified by: Phani Teja Singamaneni
  *********************************************************************/
 
 #include <hateb_local_planner/hateb_config.h>

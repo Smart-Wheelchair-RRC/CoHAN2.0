@@ -1,4 +1,6 @@
 /*********************************************************************
+ * Modified by Phani Teja Singamaneni from 2021-2025
+ * Additional changes licensed under the MIT License. See LICENSE file.
  *
  * Software License Agreement (BSD License)
  *
@@ -38,7 +40,7 @@
  * g2o-framework. g2o is licensed under the terms of the BSD License.
  * Refer to the base class source for detailed licensing information.
  *
- * Authors: Christoph Rösmann, Phani Teja Singamaneni
+ * Author: Christoph Rösmann
  *********************************************************************/
 
 #ifndef EDGE_VELOCITY_H

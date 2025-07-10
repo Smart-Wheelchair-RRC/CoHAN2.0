@@ -1,4 +1,6 @@
 /*********************************************************************
+ * Majorly modified by Phani Teja Singamaneni from 2020-2025
+ * Additional changes licensed under the MIT License. See LICENSE file.
  *
  * Software License Agreement (BSD License)
  *
@@ -34,7 +36,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Christoph Rösmann
- * Modified by: Phani Teja Singamaneni
  *********************************************************************/
 
 #ifndef OPTIMAL_PLANNER_H_

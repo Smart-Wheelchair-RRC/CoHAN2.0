@@ -1,4 +1,6 @@
 /*********************************************************************
+ * Majorly modified by Phani Teja Singamaneni from 2020-2025
+ * Additional changes licensed under the MIT License. See LICENSE file.
  *
  * Software License Agreement (BSD License)
  *
@@ -6,8 +8,8 @@
  *  TU Dortmund - Institute of Control Theory and Systems Engineering.
  *  All rights reserved.
  *
- *  Copyright (c) 2020 LAAS/CNRS
- *  All rights reserved.
+ * Copyright (c) 2020 LAAS/CNRS
+ * All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions

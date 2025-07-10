@@ -1,12 +1,11 @@
 /*********************************************************************
+ * Majorly modified by Phani Teja Singamaneni from 2020-2025
+ * Additional changes licensed under the MIT License. See LICENSE file.
  *
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2016,
+ *  Copyright (c) 2016
  *  TU Dortmund - Institute of Control Theory and Systems Engineering.
- *  All rights reserved.
- *
- *  Copyright (c) 2020 LAAS/CNRS
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -36,8 +35,9 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- * Authors: Christoph Rösmann, Phani Teja Singamaneni
+ * Author: Christoph Rösmann
  *********************************************************************/
+
 #include <hateb_local_planner/hateb_local_planner_ros.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -1556,7 +1556,7 @@ void HATebLocalPlannerROS::updateAgentViaPointsContainers(const AgentPlanVelMap 
     const auto &initial_agent_plan = transformed_agent_plan_vel_kv.second.plan;
     if (initial_agent_plan.size() == 1) {
       if (initial_agent_plan[0].header.frame_id == "static") {
-        continue; // Skip this static agent but continue processing others
+        continue;  // Skip this static agent but continue processing others
       }
     }
 

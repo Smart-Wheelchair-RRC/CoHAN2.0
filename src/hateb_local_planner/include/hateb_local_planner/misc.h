@@ -1,4 +1,6 @@
 /*********************************************************************
+ * Modified by Phani Teja Singamaneni in 2021
+ * Additional changes licensed under the MIT License. See LICENSE file.
  *
  * Software License Agreement (BSD License)
  *
@@ -34,7 +36,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Christoph Rösmann
- * Minor Modifications by: Phani Teja Singamaneni
  *********************************************************************/
 
 #ifndef MISC_H
