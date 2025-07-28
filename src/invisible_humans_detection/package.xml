@@ -5,7 +5,7 @@
   <description>The invisible_humans_detection package</description>
   <maintainer email="ptsingaman@laas.fr">Phani Teja Singamaneni</maintainer>
 
-  <license>BSD</license>
+  <license>MIT</license>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>angles</build_depend>

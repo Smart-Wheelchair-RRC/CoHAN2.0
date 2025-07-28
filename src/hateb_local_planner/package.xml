@@ -14,6 +14,7 @@
   <author email="christoph.roesmann@tu-dortmund.de">Christoph Rösmann</author>
 
   <license>BSD</license>
+  <license>MIT</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 

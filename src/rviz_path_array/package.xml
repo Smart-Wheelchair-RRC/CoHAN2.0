@@ -7,7 +7,7 @@
 
   <author email="ptsingaman@laas.fr">Phani Teja Singamaneni</author>
 
-  <license>BSD</license>
+  <license>MIT</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 

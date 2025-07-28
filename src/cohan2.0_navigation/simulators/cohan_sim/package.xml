@@ -6,7 +6,7 @@
 
   <maintainer email="ptsingaman@laas.fr">Phani Teja Singamaneni</maintainer>
   <author email="ptsingaman@laas.fr">Phani Teja Singamaneni</author>
-  <license>BSD</license>
+  <license>MIT</license>
 
   <build_depend>ros_environment</build_depend>
 

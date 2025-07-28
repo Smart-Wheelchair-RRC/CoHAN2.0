@@ -8,6 +8,7 @@
   <maintainer email="william@osrfoundation.org">William Woodall</maintainer>
 
   <license>BSD</license>
+  <license>MIT</license>
 
   <url type="website">http://ros.org/wiki/stage_ros</url>
   <url type="repository">https://github.com/ros-simulation/stage_ros</url>
