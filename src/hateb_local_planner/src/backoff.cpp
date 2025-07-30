@@ -306,12 +306,23 @@ bool Backoff::timeOut() {
   return (ros::Time::now() - last_time_).toSec() > backoff_timeout_;
 }
 
-bool Backoff::isBackoffGoalReached(geometry_msgs::Pose2D &robot_pose) const {
-  // True if Backoff goal is reached
-  double delta_orient = normalize_angle(tf2::getYaw(backoff_goal_.pose.orientation) - robot_pose.theta);
-  double dg = std::hypot(backoff_goal_.pose.position.x - robot_pose.x, backoff_goal_.pose.position.y - robot_pose.y);
+bool Backoff::isBackoffGoalReached() {
+  // Get the transform from robot frame to map frame
+  try {
+    tf_.lookupTransform(map_frame_, footprint_frame_, ros::Time(0), robot_to_map_tf_);
+  } catch (tf::LookupException &ex) {
+    ROS_ERROR_NAMED(NODE_NAME, "No Transform available Error: %s\n", ex.what());
+  } catch (tf::ConnectivityException &ex) {
+    ROS_ERROR_NAMED(NODE_NAME, "Connectivity Error: %s\n", ex.what());
+  } catch (tf::ExtrapolationException &ex) {
+    ROS_ERROR_NAMED(NODE_NAME, "Extrapolation Error: %s\n", ex.what());
+  }
 
-  return fabs(dg) < 0.2 && fabs(delta_orient) < 0.2;
+  // True if Backoff goal is reached
+  double delta_orient = normalize_angle(tf2::getYaw(backoff_goal_.pose.orientation) - tf::getYaw(robot_to_map_tf_.getRotation()));
+  double dg = std::hypot(backoff_goal_.pose.position.x - robot_to_map_tf_.getOrigin().x(), backoff_goal_.pose.position.y - robot_to_map_tf_.getOrigin().y());
+
+  return fabs(dg) < 0.1 && fabs(delta_orient) < 0.1;
 }
 
 void Backoff::loadRosParamFromNodeHandle(const ros::NodeHandle &private_nh) {

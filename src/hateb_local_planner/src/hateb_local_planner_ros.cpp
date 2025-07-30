@@ -371,7 +371,6 @@ uint32_t HATebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::Pose
   tf2::doTransform(global_plan_.back(), global_goal, tf_plan_to_global);
   double dx = global_goal.pose.position.x - robot_pose_.x();
   double dy = global_goal.pose.position.y - robot_pose_.y();
-  // goal_ctrl = false;
   double delta_orient = g2o::normalize_theta(tf2::getYaw(global_goal.pose.orientation) - robot_pose_.theta());
   if (fabs(std::sqrt((dx * dx) + (dy * dy))) < cfg_.goal_tolerance.xy_goal_tolerance && fabs(delta_orient) < cfg_.goal_tolerance.yaw_goal_tolerance &&
       (!cfg_.goal_tolerance.complete_global_plan || via_points_.size() == 0) && goal_ctrl_) {
@@ -596,6 +595,10 @@ uint32_t HATebLocalPlannerROS::computeVelocityCommands(const geometry_msgs::Pose
 
   // a feasible solution should be found, reset counter
   no_infeasible_plans_ = 0;
+
+  if (backoff_ptr_->isBackoffGoalReached() && !goal_ctrl_) {
+    cmd_vel.twist = geometry_msgs::Twist();
+  }
 
   // store last command (for recovery analysis etc.)
   last_cmd_ = cmd_vel.twist;

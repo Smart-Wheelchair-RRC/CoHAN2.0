@@ -220,6 +220,12 @@ void Agents::trackedAgentsCB(const cohan_msgs::TrackedAgents &tracked_agents) {
     sorted_ids = visible_agent_ids_;
   }
 
+  // Causes the backoff to clear as soon as the agent goes out of the FOV(need to have a timeout?)
+  // if (!std::binary_search(sorted_ids.begin(), sorted_ids.end(), stuck_agent_id_)) {
+  //   // id does not exist
+  //   stuck_ = false;
+  // }
+
   agents_info.visible = sorted_ids;
 
   for (auto &f_id : sorted_ids) {

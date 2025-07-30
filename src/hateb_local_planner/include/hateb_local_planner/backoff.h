@@ -94,10 +94,9 @@ class Backoff {
 
   /**
    * @brief Checks if the backoff goal position has been reached
-   * @param robot_pose Current pose of the robot
    * @return True if goal has been reached
    */
-  bool isBackoffGoalReached(geometry_msgs::Pose2D& robot_pose) const;
+  bool isBackoffGoalReached();
 
   /**
    * @brief Initializes the grid offsets for obstacle checking

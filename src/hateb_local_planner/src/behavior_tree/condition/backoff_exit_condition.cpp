@@ -107,7 +107,7 @@ bool BackoffExitCondition::isRecoveryComplete() {
   }
 
   // After reaching backoff goal, the human is not there anymore -> human moved away
-  if (!backed_off_ && backoff_ptr_->isBackoffGoalReached(agents_info_.robot_pose)) {
+  if (!backed_off_ && backoff_ptr_->isBackoffGoalReached()) {
     backed_off_ = true;
     if (!agents_ptr_->isAgentStuck()) {
       BT_INFO(name_, "Agent moved away while backoff is being performed!")
