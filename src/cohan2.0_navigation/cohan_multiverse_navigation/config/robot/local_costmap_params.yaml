@@ -19,7 +19,7 @@ plugins:
 
 obstacles:
   observation_sources: base_scan
-  base_scan: {data_type: LaserScan, topic: scan, expected_update_rate: 0.3, marking: true, clearing: true}
+  base_scan: {data_type: LaserScan, topic: laser_scan, expected_update_rate: 0.3, marking: true, clearing: true}
   footprint_clearing_enabled: true
   track_unknown_space: true
 inflater:
