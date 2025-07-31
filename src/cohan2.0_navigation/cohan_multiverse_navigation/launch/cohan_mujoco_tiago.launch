@@ -1,11 +1,8 @@
 <launch>
   <arg name="gui" default="false"/>
-  <arg name="node_start_delay" default="2.0"/>
+  <arg name="node_start_delay" default="0.0"/>
   <arg name="num_agents" default="0"/>
   <arg name="map_name" default="laas"/>
-
-  <!-- Use sim time for simulator -->
-  <param name="/use_sim_time" value="true"/>
   
   <!-- start map_server -->
   <node name="map_server" pkg="map_server" type="map_server" args="$(find cohan_multiverse_navigation)/maps/$(arg map_name).yaml"/>
