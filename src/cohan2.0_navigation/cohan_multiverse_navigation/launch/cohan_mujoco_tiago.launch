@@ -1,0 +1,22 @@
+<launch>
+  <arg name="gui" default="false"/>
+  <arg name="node_start_delay" default="2.0"/>
+  <arg name="num_agents" default="1"/>
+  <arg name="map_name" default="laas"/>
+
+  <!-- Use sim time for simulator -->
+  <param name="/use_sim_time" value="true"/>
+  
+  <!-- start map_server -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find cohan_multiverse_navigation)/maps/$(arg map_name).yaml"/>
+
+ <!-- Publish base_footprint frame for the robot -->
+  <node pkg="tf" type="static_transform_publisher" name="base_footprint_tf" args="0 0 0 0 0 0 /base_footprint /base_link 20"/>
+
+
+  <include file="$(find cohan_multiverse_navigation)/launch/include/robot.launch">
+    <arg name="node_start_delay" value="$(arg node_start_delay)" />
+    <arg name="num_agents" value="$(arg num_agents)"/>
+  </include>
+
+</launch>
