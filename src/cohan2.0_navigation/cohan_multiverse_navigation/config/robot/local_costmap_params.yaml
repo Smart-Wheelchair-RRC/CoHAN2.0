@@ -7,8 +7,8 @@ origin_x: 0.0
 origin_y: 0.0
 global_frame: map
 robot_base_frame: base_link
-footprint: [[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.47, 0.0], [0.325, -0.325]]
 footprint_padding: 0.01
+robot_radius: 0.27
 rolling_window: true
 plugins:
   - {name: static, type: "costmap_2d::StaticLayer"}
@@ -28,5 +28,5 @@ static:
   enabled:              true
   map_topic:            "/map"
 human_layer_static:
-  robot_radius: 0.47
+  robot_radius: 0.27
   agent_radius: 0.30
