@@ -1039,11 +1039,11 @@ bool AgentPathPrediction::transformPoseTwist(const cohan_msgs::TrackedAgents &tr
             // tf::poseStampedTFToMsg(pose_tf, pose);
             tf2::toMsg(pose_tf, pose);
 
-            geometry_msgs::Twist start_twist_to_plan_transform;
-            start_twist_to_plan_transform = tf_.lookupTwist(to_frame, twist.header.frame_id, ros::Time::now(), ros::Duration(0.1));
-            twist.twist.linear.x -= start_twist_to_plan_transform.linear.x;
-            twist.twist.linear.y -= start_twist_to_plan_transform.linear.y;
-            twist.twist.angular.z -= start_twist_to_plan_transform.angular.z;
+            geometry_msgs::TwistStamped start_twist_to_plan_transform;
+            start_twist_to_plan_transform = transformTwist(twist, to_frame);
+            twist.twist.linear.x = start_twist_to_plan_transform.twist.linear.x;
+            twist.twist.linear.y = start_twist_to_plan_transform.twist.linear.y;
+            twist.twist.angular.z = start_twist_to_plan_transform.twist.angular.z;
             twist.header.frame_id = to_frame;
             return true;
           } catch (tf2::LookupException &ex) {
@@ -1062,71 +1062,37 @@ bool AgentPathPrediction::transformPoseTwist(const cohan_msgs::TrackedAgents &tr
   return false;
 }
 
-void lookupTwist(const std::string &tracking_frame, const std::string &observation_frame, const std::string &reference_frame, const tf::Point &reference_point,
-                 const std::string &reference_point_frame, const ros::Time &time, const ros::Duration &averaging_interval, geometry_msgs::Twist &twist) const {
-  ros::Time latest_time, target_time;
-  tf_buffer_._getLatestCommonTime(observation_frame, tracking_frame, latest_time, NULL);
+geometry_msgs::TwistStamped AgentPathPrediction::transformTwist(const geometry_msgs::TwistStamped &twist_in, const std::string &target_frame) const {
+  // Look up transform from twist_in.frame → target_frame
+  geometry_msgs::TransformStamped transformStamped = tf_.lookupTransform(target_frame, twist_in.header.frame_id, ros::Time(0), ros::Duration(0.1));
 
-  if (ros::Time() == time)
-    target_time = latest_time;
-  else
-    target_time = time;
+  // Extract rotation
+  tf2::Quaternion q(transformStamped.transform.rotation.x, transformStamped.transform.rotation.y, transformStamped.transform.rotation.z, transformStamped.transform.rotation.w);
+  tf2::Matrix3x3 rot_matrix(q);
 
-  ros::Time end_time = std::min(target_time + averaging_interval * 0.5, latest_time);
+  // Rotate linear velocity
+  tf2::Vector3 lin_vel(twist_in.twist.linear.x, twist_in.twist.linear.y, twist_in.twist.linear.z);
+  tf2::Vector3 lin_rotated = rot_matrix * lin_vel;
 
-  ros::Time start_time = std::max(ros::Time().fromSec(.00001) + averaging_interval, end_time) - averaging_interval;  // don't collide with zero
-  ros::Duration corrected_averaging_interval = end_time - start_time;                                                // correct for the possiblity that start time was truncated above.
-  StampedTransform start, end;
-  lookupTransform(observation_frame, tracking_frame, start_time, start);
-  lookupTransform(observation_frame, tracking_frame, end_time, end);
+  // Rotate angular velocity
+  tf2::Vector3 ang_vel(twist_in.twist.angular.x, twist_in.twist.angular.y, twist_in.twist.angular.z);
+  tf2::Vector3 ang_rotated = rot_matrix * ang_vel;
 
-  tf::Matrix3x3 temp = start.getBasis().inverse() * end.getBasis();
-  tf::Quaternion quat_temp;
-  temp.getRotation(quat_temp);
-  tf::Vector3 o = start.getBasis() * quat_temp.getAxis();
-  tfScalar ang = quat_temp.getAngle();
+  // Fill output
+  geometry_msgs::TwistStamped twist_out;
+  twist_out.header.stamp = twist_in.header.stamp;
+  twist_out.header.frame_id = target_frame;
 
-  double delta_x = end.getOrigin().getX() - start.getOrigin().getX();
-  double delta_y = end.getOrigin().getY() - start.getOrigin().getY();
-  double delta_z = end.getOrigin().getZ() - start.getOrigin().getZ();
+  twist_out.twist.linear.x = lin_rotated.x();
+  twist_out.twist.linear.y = lin_rotated.y();
+  twist_out.twist.linear.z = lin_rotated.z();
 
-  tf::Vector3 twist_vel((delta_x) / corrected_averaging_interval.toSec(), (delta_y) / corrected_averaging_interval.toSec(), (delta_z) / corrected_averaging_interval.toSec());
-  tf::Vector3 twist_rot = o * (ang / corrected_averaging_interval.toSec());
+  twist_out.twist.angular.x = ang_rotated.x();
+  twist_out.twist.angular.y = ang_rotated.y();
+  twist_out.twist.angular.z = ang_rotated.z();
 
-  // This is a twist w/ reference frame in observation_frame  and reference point is in the tracking_frame at the origin (at start_time)
-
-  // correct for the position of the reference frame
-  tf::StampedTransform inverse;
-  lookupTransform(reference_frame, tracking_frame, target_time, inverse);
-  tf::Vector3 out_rot = inverse.getBasis() * twist_rot;
-  tf::Vector3 out_vel = inverse.getBasis() * twist_vel + inverse.getOrigin().cross(out_rot);
-
-  // Rereference the twist about a new reference point
-  //  Start by computing the original reference point in the reference frame:
-  tf::Stamped<tf::Point> rp_orig(tf::Point(0, 0, 0), target_time, tracking_frame);
-  transformPoint(reference_frame, rp_orig, rp_orig);
-  // convert the requrested reference point into the right frame
-  tf::Stamped<tf::Point> rp_desired(reference_point, target_time, reference_point_frame);
-  transformPoint(reference_frame, rp_desired, rp_desired);
-  // compute the delta
-  tf::Point delta = rp_desired - rp_orig;
-  // Correct for the change in reference point
-  out_vel = out_vel + out_rot * delta;
-  // out_rot unchanged
-
-  /*
-    printf("KDL: Rotation %f %f %f, Translation:%f %f %f\n",
-         out_rot.x(),out_rot.y(),out_rot.z(),
-         out_vel.x(),out_vel.y(),out_vel.z());
-  */
-
-  twist.linear.x = out_vel.x();
-  twist.linear.y = out_vel.y();
-  twist.linear.z = out_vel.z();
-  twist.angular.x = out_rot.x();
-  twist.angular.y = out_rot.y();
-  twist.angular.z = out_rot.z();
-};
+  return twist_out;
+}
 
 }  // namespace agents
 

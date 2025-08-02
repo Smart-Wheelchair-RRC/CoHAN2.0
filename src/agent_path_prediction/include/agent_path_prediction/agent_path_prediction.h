@@ -260,14 +260,7 @@ class AgentPathPrediction {
    */
   static double checkdist(geometry_msgs::Pose agent, geometry_msgs::Pose robot) { return std::hypot(agent.position.x - robot.position.x, agent.position.y - robot.position.y); }
 
-  void Transformer::lookupTwist(const std::string &tracking_frame, const std::string &observation_frame, const ros::Time &time, const ros::Duration &averaging_interval,
-                                geometry_msgs::Twist &twist) const {
-    // ref point is origin of tracking_frame, ref_frame = obs_frame
-    lookupTwist(tracking_frame, observation_frame, observation_frame, tf2::Vector3(0, 0, 0), tracking_frame, time, averaging_interval, twist);
-  };
-
-  void lookupTwist(const std::string &tracking_frame, const std::string &observation_frame, const std::string &reference_frame, const tf2::Vector3 &reference_point,
-                   const std::string &reference_point_frame, const ros::Time &time, const ros::Duration &averaging_interval, geometry_msgs::Twist &twist) const;
+  geometry_msgs::TwistStamped transformTwist(const geometry_msgs::TwistStamped &twist_in, const std::string &target_frame) const;
 
   // Properties
   cohan_msgs::TrackedAgents tracked_agents_;                                 //!< Current state of tracked agents in the environment
