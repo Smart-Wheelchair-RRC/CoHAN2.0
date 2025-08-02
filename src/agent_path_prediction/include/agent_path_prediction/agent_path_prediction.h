@@ -33,22 +33,30 @@
 #include <agent_path_prediction/AgentPosePredict.h>
 #include <agent_path_prediction/PredictedGoal.h>
 #include <agent_path_prediction/PredictedGoals.h>
-#include <agent_path_prediction/agents_class.h>
 #include <agent_path_prediction/predict_goal.h>
+#include <cohan_msgs/AgentPathArray.h>
+#include <cohan_msgs/TrackedAgents.h>
 #include <dynamic_reconfigure/Config.h>
 #include <dynamic_reconfigure/DoubleParameter.h>
 #include <dynamic_reconfigure/IntParameter.h>
 #include <dynamic_reconfigure/Reconfigure.h>
 #include <dynamic_reconfigure/server.h>
+#include <geometry_msgs/TransformStamped.h>
 #include <nav_msgs/GetPlan.h>
 #include <ros/ros.h>
 #include <std_srvs/Empty.h>
 #include <std_srvs/SetBool.h>
 #include <std_srvs/Trigger.h>
-#include <tf/transform_listener.h>
 #include <visualization_msgs/MarkerArray.h>
 
+#include <memory>
 #include <string>
+
+//  TF2
+// #include <tf2/convert.h>
+#include <tf2/utils.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 
 // Some fixed parameters
 #define ANG_VEL_EPS 0.001
@@ -117,7 +125,8 @@ class AgentPathPrediction {
   ros::ServiceClient get_plan_client_;                   // Client for getting navigation plans
 
   // Transform listener
-  tf::TransformListener tf_;  // Transform listener for coordinate transformations
+  tf2_ros::Buffer tf_;                                       // TF2 buffer for coordinate transformations
+  std::unique_ptr<tf2_ros::TransformListener> tf_listener_;  // TF2 transform listener for coordinate transformations
 
   // subscriber callbacks
   /**
@@ -250,6 +259,15 @@ class AgentPathPrediction {
    * @return Distance between agent and robot
    */
   static double checkdist(geometry_msgs::Pose agent, geometry_msgs::Pose robot) { return std::hypot(agent.position.x - robot.position.x, agent.position.y - robot.position.y); }
+
+  void Transformer::lookupTwist(const std::string &tracking_frame, const std::string &observation_frame, const ros::Time &time, const ros::Duration &averaging_interval,
+                                geometry_msgs::Twist &twist) const {
+    // ref point is origin of tracking_frame, ref_frame = obs_frame
+    lookupTwist(tracking_frame, observation_frame, observation_frame, tf2::Vector3(0, 0, 0), tracking_frame, time, averaging_interval, twist);
+  };
+
+  void lookupTwist(const std::string &tracking_frame, const std::string &observation_frame, const std::string &reference_frame, const tf2::Vector3 &reference_point,
+                   const std::string &reference_point_frame, const ros::Time &time, const ros::Duration &averaging_interval, geometry_msgs::Twist &twist) const;
 
   // Properties
   cohan_msgs::TrackedAgents tracked_agents_;                                 //!< Current state of tracked agents in the environment

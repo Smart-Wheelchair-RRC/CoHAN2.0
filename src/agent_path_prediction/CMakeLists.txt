@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(agent_path_prediction)
 
-set(CMAKE_CXX_COMPILER_ARG1 -std=c++11)
+set(CMAKE_CXX_COMPILER_ARG1 -std=c++17)
 set(CMAKE_BUILD_TYPE Release)
 
 find_package(yaml-cpp REQUIRED)
