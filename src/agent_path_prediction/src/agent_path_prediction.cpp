@@ -1041,6 +1041,7 @@ bool AgentPathPrediction::transformPoseTwist(const cohan_msgs::TrackedAgents &tr
 
             geometry_msgs::TwistStamped start_twist_to_plan_transform;
             start_twist_to_plan_transform = transformTwist(twist, to_frame);
+            // TODO: Check if this is correct (or - is reverse transform needed?)
             twist.twist.linear.x = start_twist_to_plan_transform.twist.linear.x;
             twist.twist.linear.y = start_twist_to_plan_transform.twist.linear.y;
             twist.twist.angular.z = start_twist_to_plan_transform.twist.angular.z;
