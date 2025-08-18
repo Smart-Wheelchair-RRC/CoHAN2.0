@@ -834,15 +834,8 @@ bool AgentPathPrediction::predictAgentsFromPaths(agent_path_prediction::AgentPos
           }
         }
         last_predicted_poses_.push_back(predicted_poses);
-
         last_prune_indices_.erase(predicted_poses.id);
 
-        // for (auto it = tracked_agents.agents.begin(); it != tracked_agents.agents.end(); ++it) {  // TODD: Check this, remove for now
-        //   if (it->track_id == predicted_poses.id) {
-        //     tracked_agents.agents.erase(it);
-        //     break;
-        //   }
-        // }
         ROS_DEBUG_NAMED(NODE_NAME, "Processed new path for agent %ld with %ld poses in frame %s", agent_path_vel.id, predicted_poses.poses.size(),
                         predicted_poses.poses.front().header.frame_id.c_str());
       }
@@ -854,7 +847,6 @@ bool AgentPathPrediction::predictAgentsFromPaths(agent_path_prediction::AgentPos
     if (!poses.poses.empty()) {
       geometry_msgs::PoseStamped start_pose;
       geometry_msgs::TwistStamped start_twist;
-      // TODO: Simplify this instead of complicated method now
       if (transformPoseTwist(tracked_agents, poses.id, poses.poses.front().header.frame_id, start_pose, start_twist)) {
         auto last_prune_index_it = last_prune_indices_.find(poses.id);
         auto begin_index = (last_prune_index_it != last_prune_indices_.end()) ? last_prune_index_it->second : 0;
@@ -1015,10 +1007,6 @@ bool AgentPathPrediction::transformPoseTwist(const cohan_msgs::TrackedAgents &tr
           twist.header.frame_id = tracked_agents.header.frame_id;
           twist.twist = segment.twist.twist;
           try {
-            // tf::Stamped<tf::Pose> pose_tf;
-            // tf::poseStampedMsgToTF(pose_ut, pose_tf);
-            // tf::StampedTransform start_pose_to_plan_transform;
-
             tf2::Stamped<tf2::Transform> pose_tf;
             tf2::fromMsg(pose_ut, pose_tf);
             geometry_msgs::TransformStamped start_pose_to_plan_transform;
@@ -1026,22 +1014,16 @@ bool AgentPathPrediction::transformPoseTwist(const cohan_msgs::TrackedAgents &tr
             if (to_frame.empty() || pose_ut.header.frame_id.empty() || twist.header.frame_id.empty()) {
               continue;
             }
-            // tf_.waitForTransform(to_frame, pose_ut.header.frame_id, ros::Time(0), ros::Duration(0.5));
             tf_.canTransform(to_frame, pose_ut.header.frame_id, ros::Time(0), ros::Duration(0.5));
-            // tf_.lookupTransform(to_frame, pose_ut.header.frame_id, ros::Time(0), start_pose_to_plan_transform);
             start_pose_to_plan_transform = tf_.lookupTransform(to_frame, pose_ut.header.frame_id, ros::Time(0), ros::Duration(1.0));
-            // pose_tf.setData(start_pose_to_plan_transform * pose_tf);
             tf2::Transform start_transform;
             tf2::fromMsg(start_pose_to_plan_transform.transform, start_transform);
             pose_tf.setData(start_transform * pose_tf);
-            // pose_tf.setFrameId(to_frame);
             pose_tf.frame_id_ = to_frame;
-            // tf::poseStampedTFToMsg(pose_tf, pose);
             tf2::toMsg(pose_tf, pose);
 
             geometry_msgs::TwistStamped start_twist_to_plan_transform;
             start_twist_to_plan_transform = transformTwist(twist, to_frame);
-            // TODO: Check if this is correct (or - is reverse transform needed?)
             twist.twist.linear.x = start_twist_to_plan_transform.twist.linear.x;
             twist.twist.linear.y = start_twist_to_plan_transform.twist.linear.y;
             twist.twist.angular.z = start_twist_to_plan_transform.twist.angular.z;
@@ -1064,7 +1046,6 @@ bool AgentPathPrediction::transformPoseTwist(const cohan_msgs::TrackedAgents &tr
 }
 
 geometry_msgs::TwistStamped AgentPathPrediction::transformTwist(const geometry_msgs::TwistStamped &twist_in, const std::string &target_frame) const {
-  // Look up transform from twist_in.frame → target_frame
   geometry_msgs::TransformStamped transformStamped = tf_.lookupTransform(target_frame, twist_in.header.frame_id, ros::Time(0), ros::Duration(0.1));
 
   // Extract rotation
