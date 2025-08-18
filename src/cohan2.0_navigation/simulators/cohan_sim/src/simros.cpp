@@ -112,6 +112,9 @@ void SimROS::publishROS() {
 
     scan_pubs_[robot.idx].publish(scan_msgs_[robot.idx]);
     odom_pubs_[robot.idx].publish(odom_msgs_[robot.idx]);
+    odom_msgs_[robot.idx].twist.twist.linear.x = robot.entity.g_vx();
+    odom_msgs_[robot.idx].twist.twist.linear.y = robot.entity.g_vy();
+    odom_msgs_[robot.idx].twist.twist.angular.z = robot.entity.g_omega();
     ground_truth_pubs_[robot.idx].publish(odom_msgs_[robot.idx]);
 
     std::vector<geometry_msgs::TransformStamped> transforms;
