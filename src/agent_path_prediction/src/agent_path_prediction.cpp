@@ -375,6 +375,7 @@ bool AgentPathPrediction::predictAgentsExternal(agent_path_prediction::AgentPose
           agent_start.header.stamp = now;
           agent_start.pose = segment.pose.pose;
 
+          // TODO: Remove unncessary conversions
           tf2::Transform start_pose_tf;
           start_pose_tf.setRotation(tf2::Quaternion(0.0, 0.0, 0.0, 1.0));
           geometry_msgs::Pose start_pose;
@@ -1022,11 +1023,11 @@ bool AgentPathPrediction::transformPoseTwist(const cohan_msgs::TrackedAgents &tr
             pose_tf.frame_id_ = to_frame;
             tf2::toMsg(pose_tf, pose);
 
-            geometry_msgs::TwistStamped start_twist_to_plan_transform;
-            start_twist_to_plan_transform = transformTwist(twist, to_frame);
-            twist.twist.linear.x = start_twist_to_plan_transform.twist.linear.x;
-            twist.twist.linear.y = start_twist_to_plan_transform.twist.linear.y;
-            twist.twist.angular.z = start_twist_to_plan_transform.twist.angular.z;
+            geometry_msgs::Twist start_twist_to_plan_transform;
+            lookupTwist(to_frame, twist.header.frame_id, ros::Time::now(), ros::Duration(0.1), start_twist_to_plan_transform);
+            twist.twist.linear.x = start_twist_to_plan_transform.linear.x;
+            twist.twist.linear.y = start_twist_to_plan_transform.linear.y;
+            twist.twist.angular.z = start_twist_to_plan_transform.angular.z;
             twist.header.frame_id = to_frame;
             return true;
           } catch (tf2::LookupException &ex) {

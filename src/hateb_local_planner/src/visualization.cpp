@@ -88,6 +88,9 @@ void TebVisualization::initialize(ros::NodeHandle &nh, const HATebConfig &cfg) {
   // set config
   cfg_ = &cfg;
 
+  // Initialize tf2 listener with buffer
+  tf_listener_ = std::make_unique<tf2_ros::TransformListener>(tf_);
+
   // register topics
   global_plan_pub_ = nh.advertise<nav_msgs::Path>(GLOBAL_PLAN_TOPIC, 1);
   local_plan_pub_ = nh.advertise<nav_msgs::Path>(LOCAL_PLAN_TOPIC, 1);
@@ -232,7 +235,9 @@ void TebVisualization::publishLocalPlanAndPoses(const TimedElasticBand &teb, con
     pose.pose.position.y = teb.Pose(i).y();
     // pose_times.push_back(teb.TimeDiff(i));
     pose.pose.position.z = 0;  // cfg_->trajectory.visualize_with_time_as_z_axis_scale*teb.getSumOfTimeDiffsUpToIdx(i);
-    pose.pose.orientation = tf::createQuaternionMsgFromYaw(teb.Pose(i).theta());
+    tf2::Quaternion q;
+    q.setRPY(0, 0, teb.Pose(i).theta());
+    pose.pose.orientation = tf2::toMsg(q);
     teb_path.poses.push_back(pose);
     teb_poses.poses.push_back(pose.pose);
 
@@ -414,7 +419,9 @@ void TebVisualization::publishAgentLocalPlansAndPoses(const std::map<uint64_t, T
       pose.pose.position.x = agent_teb.Pose(i).x();
       pose.pose.position.y = agent_teb.Pose(i).y();
       pose.pose.position.z = pose_time * cfg_->visualization.pose_array_z_scale;
-      pose.pose.orientation = tf::createQuaternionMsgFromYaw(agent_teb.Pose(i).theta());
+      tf2::Quaternion q;
+      q.setRPY(0, 0, agent_teb.Pose(i).theta());
+      pose.pose.orientation = tf2::toMsg(q);
       agents_teb_poses.poses.push_back(pose.pose);
       pose.pose.position.z = 0;
       path.path.poses.push_back(pose);
@@ -569,31 +576,31 @@ void TebVisualization::publishAgentTrajectories(const std::vector<AgentPlanTrajC
 }
 
 void TebVisualization::publishMode(int Mode) {
-  tf::StampedTransform robot_to_map_tf;
-  tf::Transform start_pose_tr;
   bool transform_found = false;
+  geometry_msgs::TransformStamped robot_to_map_tr;
   try {
     std::string base = "base_link";
     if (!ns_.empty()) {
       base = ns_ + "/" + base;
     }
 
-    tf_.lookupTransform("map", base, ros::Time(0), robot_to_map_tf);
+    robot_to_map_tr = tf_.lookupTransform("map", base, ros::Time(0), ros::Duration(0.1));
     transform_found = true;
-  } catch (tf::LookupException &ex) {
+
+  } catch (tf2::LookupException &ex) {
     ROS_ERROR_NAMED("visualization", "No Transform available Error: %s\n", ex.what());
-  } catch (tf::ConnectivityException &ex) {
+  } catch (tf2::ConnectivityException &ex) {
     ROS_ERROR_NAMED("visualization", "Connectivity Error: %s\n", ex.what());
-  } catch (tf::ExtrapolationException &ex) {
+  } catch (tf2::ExtrapolationException &ex) {
     ROS_ERROR_NAMED("visualization", "Extrapolation Error: %s\n", ex.what());
   }
 
-  geometry_msgs::Transform robot_behind_pose;
+  geometry_msgs::Pose start_pose;
   if (transform_found) {
-    start_pose_tr.setOrigin(tf::Vector3(-1.0, 0.0, 0.0));
-    start_pose_tr.setRotation(tf::createQuaternionFromYaw(0.0));
-    start_pose_tr = robot_to_map_tf * start_pose_tr;
-    tf::transformTFToMsg(start_pose_tr, robot_behind_pose);
+    // Transform the start pose to the map frame
+    start_pose.position.x = -1.0;    // Text is behind the robot
+    start_pose.orientation.w = 1.0;  // No rotation
+    tf2::doTransform(start_pose, start_pose, robot_to_map_tr);
   }
 
   visualization_msgs::Marker mode_text;
@@ -603,14 +610,8 @@ void TebVisualization::publishMode(int Mode) {
   mode_text.id = 1;
   mode_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
   mode_text.action = visualization_msgs::Marker::ADD;
-  mode_text.pose.position.x = robot_behind_pose.translation.x;
-  mode_text.pose.position.y = robot_behind_pose.translation.y;
+  mode_text.pose = start_pose;
   mode_text.pose.position.z = 2.0;
-  mode_text.pose.orientation = robot_behind_pose.rotation;
-  // mode_text.pose.orientation.x = 0.0;
-  // mode_text.pose.orientation.y = 0.0;
-  // mode_text.pose.orientation.z = 0.0;
-  // mode_text.pose.orientation.w = 1.0;
 
   if (Mode == -1)
     mode_text.text = "SingleBand";

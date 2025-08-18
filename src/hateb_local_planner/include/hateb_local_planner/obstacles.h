@@ -45,7 +45,6 @@
 #include <geometry_msgs/QuaternionStamped.h>
 #include <geometry_msgs/TwistWithCovariance.h>
 #include <hateb_local_planner/distance_calculations.h>
-#include <tf/tf.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>

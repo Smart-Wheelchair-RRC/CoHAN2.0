@@ -44,7 +44,8 @@
 #include <g2o/stuff/misc.h>
 #include <geometry_msgs/Pose.h>
 #include <hateb_local_planner/misc.h>
-#include <tf/transform_datatypes.h>
+#include <tf2/utils.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <Eigen/Core>
 
@@ -95,17 +96,7 @@ class PoseSE2 {
   explicit PoseSE2(const geometry_msgs::Pose& pose) {
     position_.coeffRef(0) = pose.position.x;
     position_.coeffRef(1) = pose.position.y;
-    theta_ = tf::getYaw(pose.orientation);
-  }
-
-  /**
-   * @brief Construct pose using a tf::Pose
-   * @param pose tf::Pose object
-   */
-  explicit PoseSE2(const tf::Pose& pose) {
-    position_.coeffRef(0) = pose.getOrigin().getX();
-    position_.coeffRef(1) = pose.getOrigin().getY();
-    theta_ = tf::getYaw(pose.getRotation());
+    theta_ = tf2::getYaw(pose.orientation);
   }
 
   /**
@@ -193,7 +184,9 @@ class PoseSE2 {
     pose.position.x = position_.x();
     pose.position.y = position_.y();
     pose.position.z = 0;
-    pose.orientation = tf::createQuaternionMsgFromYaw(theta_);
+    tf2::Quaternion q;
+    q.setRPY(0, 0, theta_);
+    pose.orientation = tf2::toMsg(q);
   }
 
   /**

@@ -47,14 +47,12 @@
 #include <std_srvs/Empty.h>
 #include <std_srvs/SetBool.h>
 #include <std_srvs/Trigger.h>
-#include <tf/transform_listener.h>
 #include <visualization_msgs/MarkerArray.h>
 
 #include <memory>
 #include <string>
 
 //  TF2
-// #include <tf2/convert.h>
 #include <tf2/utils.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -261,7 +259,126 @@ class AgentPathPrediction {
    */
   static double checkdist(geometry_msgs::Pose agent, geometry_msgs::Pose robot) { return std::hypot(agent.position.x - robot.position.x, agent.position.y - robot.position.y); }
 
-  geometry_msgs::TwistStamped transformTwist(const geometry_msgs::TwistStamped &twist_in, const std::string &target_frame) const;
+  /**
+   * @brief Look up twist information between frames with default reference point
+   *
+   * Simplified version that uses the origin of tracking_frame as the reference point
+   * and observation_frame as the reference frame.
+   * @param tracking_frame The frame being tracked
+   * @param observation_frame The frame from which we're observing
+   * @param time The time at which to get the twist
+   * @param averaging_interval Time interval over which to average the twist
+   * @param[out] twist The resulting twist message
+   */
+  void lookupTwist(const std::string &tracking_frame, const std::string &observation_frame, const ros::Time &time, const ros::Duration &averaging_interval, geometry_msgs::Twist &twist) const {
+    // ref point is origin of tracking_frame, ref_frame = obs_frame
+    lookupTwist(tracking_frame, observation_frame, observation_frame, tf2::Vector3(0, 0, 0), tracking_frame, time, averaging_interval, twist);
+  }
+
+  /**
+   * @brief Look up twist information between frames with custom reference point
+   *
+   * This method computes the twist (linear and angular velocity) of one frame
+   * relative to another, allowing specification of a custom reference point and frame.
+   * It performs the necessary coordinate transformations and averages the motion
+   * over the specified time interval.
+   *
+   * @param tracking_frame The frame being tracked (whose motion we want to determine)
+   * @param observation_frame The frame from which we're observing
+   * @param reference_frame The frame in which the twist should be expressed
+   * @param reference_point The point about which the twist should be computed
+   * @param reference_point_frame The frame in which the reference point is expressed
+   * @param time The time at which to get the twist
+   * @param averaging_interval Time interval over which to average the twist
+   * @param[out] twist The resulting twist message containing linear and angular velocities
+   */
+  void lookupTwist(const std::string &tracking_frame, const std::string &observation_frame, const std::string &reference_frame, const tf2::Vector3 &reference_point,
+                   const std::string &reference_point_frame, const ros::Time &time, const ros::Duration &averaging_interval, geometry_msgs::Twist &twist) const {
+    ros::Time latest_time;
+    ros::Time target_time;
+
+    tf2::CompactFrameID target_id = tf_._lookupFrameNumber(strip_leading_slash(tracking_frame));
+    tf2::CompactFrameID source_id = tf_._lookupFrameNumber(strip_leading_slash(observation_frame));
+    tf_._getLatestCommonTime(source_id, target_id, latest_time, nullptr);
+
+    if (ros::Time() == time) {
+      target_time = latest_time;
+    } else {
+      target_time = time;
+    }
+
+    ros::Time end_time = std::min(target_time + averaging_interval * 0.5, latest_time);
+
+    ros::Time start_time = std::max(ros::Time().fromSec(.00001) + averaging_interval, end_time) - averaging_interval;  // don't collide with zero
+    ros::Duration corrected_averaging_interval = end_time - start_time;                                                // correct for the possiblity that start time was
+                                                                                                                       // truncated above.
+    geometry_msgs::TransformStamped start_msg;
+    geometry_msgs::TransformStamped end_msg;
+    start_msg = tf_.lookupTransform(observation_frame, tracking_frame, start_time);
+    end_msg = tf_.lookupTransform(observation_frame, tracking_frame, end_time);
+
+    tf2::Stamped<tf2::Transform> start;
+    tf2::Stamped<tf2::Transform> end;
+    tf2::fromMsg(start_msg, start);
+    tf2::fromMsg(end_msg, end);
+
+    tf2::Matrix3x3 temp = start.getBasis().inverse() * end.getBasis();
+    tf2::Quaternion quat_temp;
+    temp.getRotation(quat_temp);
+    tf2::Vector3 o = start.getBasis() * quat_temp.getAxis();
+    double ang = quat_temp.getAngle();
+
+    double delta_x = end.getOrigin().getX() - start.getOrigin().getX();
+    double delta_y = end.getOrigin().getY() - start.getOrigin().getY();
+    double delta_z = end.getOrigin().getZ() - start.getOrigin().getZ();
+
+    tf2::Vector3 twist_vel((delta_x) / corrected_averaging_interval.toSec(), (delta_y) / corrected_averaging_interval.toSec(), (delta_z) / corrected_averaging_interval.toSec());
+    tf2::Vector3 twist_rot = o * (ang / corrected_averaging_interval.toSec());
+
+    // This is a twist w/ reference frame in observation_frame  and reference
+    // point is in the tracking_frame at the origin (at start_time)
+
+    // correct for the position of the reference frame
+    tf2::Stamped<tf2::Transform> inverse;
+    tf2::fromMsg(tf_.lookupTransform(reference_frame, tracking_frame, target_time), inverse);
+    tf2::Vector3 out_rot = inverse.getBasis() * twist_rot;
+    tf2::Vector3 out_vel = inverse.getBasis() * twist_vel + inverse.getOrigin().cross(out_rot);
+
+    // Rereference the twist about a new reference point
+    // Start by computing the original reference point in the reference frame:
+    tf2::Stamped<tf2::Vector3> rp_orig(tf2::Vector3(0, 0, 0), target_time, tracking_frame);
+    geometry_msgs::TransformStamped reference_frame_trans;
+    tf2::fromMsg(tf_.lookupTransform(reference_frame, rp_orig.frame_id_, rp_orig.stamp_), reference_frame_trans);
+
+    geometry_msgs::PointStamped rp_orig_msg;
+    tf2::toMsg(rp_orig, rp_orig_msg);
+    tf2::doTransform(rp_orig_msg, rp_orig_msg, reference_frame_trans);
+
+    // convert the requrested reference point into the right frame
+    tf2::Stamped<tf2::Vector3> rp_desired(reference_point, target_time, reference_point_frame);
+    geometry_msgs::PointStamped rp_desired_msg;
+    tf2::toMsg(rp_desired, rp_desired_msg);
+    tf2::doTransform(rp_desired_msg, rp_desired_msg, reference_frame_trans);
+    // compute the delta
+    tf2::Vector3 delta = rp_desired - rp_orig;
+    // Correct for the change in reference point
+    out_vel = out_vel + out_rot * delta;
+    // out_rot unchanged
+
+    twist.linear.x = out_vel.x();
+    twist.linear.y = out_vel.y();
+    twist.linear.z = out_vel.z();
+    twist.angular.x = out_rot.x();
+    twist.angular.y = out_rot.y();
+    twist.angular.z = out_rot.z();
+  }
+
+  std::string strip_leading_slash(const std::string &frame_id) const {
+    if (!frame_id.empty() && frame_id[0] == '/') {
+      return frame_id.substr(1);
+    }
+    return frame_id;
+  }
 
   // Properties
   cohan_msgs::TrackedAgents tracked_agents_;                                 //!< Current state of tracked agents in the environment

@@ -36,8 +36,9 @@
 #include <ros/ros.h>
 #include <std_srvs/SetBool.h>
 #include <std_srvs/Trigger.h>
-#include <tf/transform_listener.h>
 #include <tf2/utils.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 
 namespace hateb_local_planner {
 
@@ -163,7 +164,9 @@ class Backoff {
   geometry_msgs::PoseStamped goal_;      //!< Current navigation goal
   geometry_msgs::PoseStamped old_goal_;  //!< Previous navigation goal
 
-  tf::TransformListener tf_;  //!< Transform listener for coordinate transformations
+  // Transform listener
+  tf2_ros::Buffer tf_;                                       // TF2 buffer for coordinate transformations
+  std::unique_ptr<tf2_ros::TransformListener> tf_listener_;  // TF2 transform listener for coordinate transformations
 
   costmap_2d::Costmap2DROS* costmap_ros_;  //!< Pointer to the costmap ROS wrapper
   costmap_2d::Costmap2D* costmap_;         //!< Pointer to the 2D costmap
@@ -185,8 +188,8 @@ class Backoff {
   // ros::Time last_rot_time_;   //!< Time of the last rotation movement
   // ros::Time last_goal_time_;  //!< Time when the last goal was received
 
-  tf::Transform start_pose_tr_;           //!< Initial pose stored as transform
-  tf::StampedTransform robot_to_map_tf_;  //!< Transform from robot base to map frame
+  tf2::Transform start_pose_tr_;    //!< Initial pose stored as transform
+  tf2::Transform robot_to_map_tf_;  //!< Transform from robot base to map frame
 
   std::shared_ptr<base_local_planner::CostmapModel> costmap_model_;  //!< Model for collision checking with costmap
   geometry_msgs::PoseStamped backoff_goal_;                          //!< Goal pose for backoff maneuver

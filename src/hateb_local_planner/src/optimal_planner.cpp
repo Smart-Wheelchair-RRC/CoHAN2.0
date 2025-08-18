@@ -422,18 +422,6 @@ bool TebOptimalPlanner::plan(const std::vector<geometry_msgs::PoseStamped> &init
   return teb_opt_result;
 }
 
-bool TebOptimalPlanner::plan(const tf::Pose &start, const tf::Pose &goal, const geometry_msgs::Twist *start_vel, bool free_goal_vel, hateb_local_planner::OptimizationCostArray *op_costs,
-                             double dt_ref, double dt_hyst, int Mode) {
-  isMode_ = Mode;
-  auto start_time = ros::Time::now();
-  PoseSE2 start_(start);
-  PoseSE2 goal_(goal);
-  geometry_msgs::Twist *zero_vel;
-  const geometry_msgs::Twist *vel = start_vel ? start_vel : zero_vel;
-  auto pre_plan_time = ros::Time::now() - start_time;
-  return plan(start_, goal_, vel, free_goal_vel, pre_plan_time.toSec(), op_costs, dt_ref, dt_hyst);
-}
-
 bool TebOptimalPlanner::plan(const PoseSE2 &start, const PoseSE2 &goal, const geometry_msgs::Twist *start_vel, bool free_goal_vel, double pre_plan_time,
                              hateb_local_planner::OptimizationCostArray *op_costs, double dt_ref, double dt_hyst, int Mode) {
   isMode_ = Mode;

@@ -44,7 +44,9 @@
 #include <hateb_local_planner/obstacles.h>
 #include <ros/assert.h>
 #include <ros/ros.h>
-#include <tf/tf.h>
+#include <tf2/utils.h>
+
+#include <boost/optional.hpp>
 
 // G2O Types
 #include <hateb_local_planner/g2o_types/vertex_pose.h>

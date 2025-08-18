@@ -83,7 +83,6 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
-#include <tf/transform_datatypes.h>
 
 #include <climits>
 
@@ -166,25 +165,6 @@ class TebOptimalPlanner : public PlannerInterface {
   bool plan(const std::vector<geometry_msgs::PoseStamped>& initial_plan, const geometry_msgs::Twist* start_vel = nullptr, bool free_goal_vel = false,
             const AgentPlanVelMap* initial_agent_plan_vel_map = nullptr, hateb_local_planner::OptimizationCostArray* op_costs = nullptr, double dt_ref = 0.4, double dt_hyst = 0.1,
             int Mode = 0) override;
-
-  /**
-   * @brief Plan a trajectory between a given start and goal pose (tf::Pose version)
-   *
-   * Call this method to create and optimize a trajectory that is initialized between a given start and goal pose. \n
-   * The method supports hot-starting from previous solutions, if avaiable: \n
-   * 	- If no trajectory exist yet, a new trajectory is initialized between start and goal poses,
-   *	  see TimedElasticBand::initTEBtoGoal
-   * 	- If a previous solution is avaiable, update the trajectory @see bool TimedElasticBand::updateAndPruneTEB
-   * 	- Afterwards optimize the recently initialized or updated trajectory by calling optimizeTEB() and invoking g2o
-   * @param start tf::Pose containing the start pose of the trajectory
-   * @param goal tf::Pose containing the goal pose of the trajectory
-   * @param start_vel Current start velocity (e.g. the velocity of the robot, only linear.x, linear.y (holonomic) and angular.z are used)
-   * @param free_goal_vel if \c true, a nonzero final velocity at the goal pose is allowed,
-   *		      otherwise the final velocity will be zero (default: false)
-   * @return \c true if planning was successful, \c false otherwise
-   */
-  bool plan(const tf::Pose& start, const tf::Pose& goal, const geometry_msgs::Twist* start_vel = nullptr, bool free_goal_vel = false, hateb_local_planner::OptimizationCostArray* op_costs = nullptr,
-            double dt_ref = 0.4, double dt_hyst = 0.1, int Mode = 0) override;
 
   /**
    * @brief Plan a trajectory between a given start and goal pose
