@@ -53,7 +53,10 @@
 // ros stuff
 #include <base_local_planner/goal_functions.h>
 #include <ros/publisher.h>
-#include <tf/transform_listener.h>
+#include <tf2/utils.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 
 // boost
 #include <boost/graph/adjacency_list.hpp>
@@ -74,7 +77,6 @@
 #include <nav_msgs/Path.h>
 #include <std_msgs/ColorRGBA.h>
 #include <std_msgs/Float32.h>
-#include <tf/transform_datatypes.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
@@ -360,7 +362,8 @@ class TebVisualization {
   ros::Subscriber tracked_agents_sub_;                               //!< Subscriber for tracked agents data input
   std::vector<double> vel_robot_;                                    //!< Store robot velocity history (for bar visualization)
   std::vector<double> vel_agent_;                                    //!< Store agent velocity history (for bar visualization)
-  tf::TransformListener tf_;                                         //!< Transform listener for coordinate frame transformations
+  tf2_ros::Buffer tf_;                                               // TF2 buffer for coordinate transformations
+  std::unique_ptr<tf2_ros::TransformListener> tf_listener_;          // TF2 transform listener for coordinate transformations
   ros::Publisher ttg_pub_;                                           //!< Publisher for time-to-goal information
   std::string ns_;                                                   //!< Name space of the robot
   std::string tracked_agents_sub_topic_;                             //!< Tracked agents sub topic

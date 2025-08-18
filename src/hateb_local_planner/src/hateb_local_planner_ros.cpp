@@ -859,7 +859,7 @@ void HATebLocalPlannerROS::updateObstacleContainerWithCustomObstacles() {
       geometry_msgs::TransformStamped obstacle_to_map =
           tf_->lookupTransform(global_frame_, ros::Time::now(), custom_obstacle_msg_.header.frame_id, ros::Time::now(), custom_obstacle_msg_.header.frame_id, ros::Duration(0.8));
       obstacle_to_map_eig = tf2::transformToEigen(obstacle_to_map);
-    } catch (tf::TransformException ex) {
+    } catch (tf2::TransformException ex) {
       ROS_ERROR("%s", ex.what());
       obstacle_to_map_eig.setIdentity();
     }
@@ -954,7 +954,7 @@ bool HATebLocalPlannerROS::pruneGlobalPlan(const tf2_ros::Buffer &tf, const geom
     }
 
     if (erase_end != global_plan.begin()) global_plan.erase(global_plan.begin(), erase_end);
-  } catch (const tf::TransformException &ex) {
+  } catch (const tf2::TransformException &ex) {
     ROS_DEBUG("Cannot prune path since no transform is available: %s\n", ex.what());
     return false;
   }
@@ -1080,13 +1080,13 @@ bool HATebLocalPlannerROS::transformGlobalPlan(const tf2_ros::Buffer &tf, const 
     if (tf_plan_to_global) {
       *tf_plan_to_global = plan_to_global_transform;
     }
-  } catch (tf::LookupException &ex) {
+  } catch (tf2::LookupException &ex) {
     ROS_ERROR("No Transform available Error: %s\n", ex.what());
     return false;
-  } catch (tf::ConnectivityException &ex) {
+  } catch (tf2::ConnectivityException &ex) {
     ROS_ERROR("Connectivity Error: %s\n", ex.what());
     return false;
-  } catch (tf::ExtrapolationException &ex) {
+  } catch (tf2::ExtrapolationException &ex) {
     ROS_ERROR("Extrapolation Error: %s\n", ex.what());
     if (global_plan.size() > 0) {
       ROS_ERROR("Global Frame: %s Plan Frame size %d: %s\n", global_frame.c_str(), (unsigned int)global_plan.size(), global_plan[0].header.frame_id.c_str());
@@ -1513,7 +1513,7 @@ void HATebLocalPlannerROS::updateObstacleContainerWithInvHumans() {
       robot_y = transform_stamped.transform.translation.y;
       robot_yaw = tf2::getYaw(transform_stamped.transform.rotation);
       robot_vec(std::cos(robot_yaw), std::sin(robot_yaw));
-    } catch (tf::TransformException ex) {
+    } catch (tf2::TransformException ex) {
       ROS_ERROR("%s", ex.what());
       obstacle_to_map_eig.setIdentity();
     }
@@ -1698,13 +1698,13 @@ bool HATebLocalPlannerROS::transformAgentPlan(const tf2_ros::Buffer &tf2, const 
     if (tf_agent_plan_to_global) {
       *tf_agent_plan_to_global = agent_plan_to_global_transform_;
     }
-  } catch (tf::LookupException &ex) {
+  } catch (tf2::LookupException &ex) {
     ROS_ERROR("No Transform available Error: %s\n", ex.what());
     return false;
-  } catch (tf::ConnectivityException &ex) {
+  } catch (tf2::ConnectivityException &ex) {
     ROS_ERROR("Connectivity Error: %s\n", ex.what());
     return false;
-  } catch (tf::ExtrapolationException &ex) {
+  } catch (tf2::ExtrapolationException &ex) {
     ROS_ERROR("Extrapolation Error: %s\n", ex.what());
     if (!agent_plan.empty()) {
       ROS_ERROR("Global Frame: %s Plan Frame size %d: %s\n", global_frame.c_str(), (unsigned int)agent_plan.size(), agent_plan.front().header.frame_id.c_str());

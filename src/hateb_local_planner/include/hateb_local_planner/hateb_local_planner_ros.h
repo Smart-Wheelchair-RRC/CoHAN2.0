@@ -212,18 +212,6 @@ class HATebLocalPlannerROS : public nav_core::BaseLocalPlanner, public mbf_costm
   //@{
 
   /**
-   * @brief  Transform a tf::Pose type into a Eigen::Vector2d containing the
-   * translational and angular velocities.
-   *
-   * Translational velocities (x- and y-coordinates) are combined into a single
-   * translational velocity (first component).
-   * @param tf_vel tf::Pose message containing a 1D or 2D translational velocity
-   * (x,y) and an angular velocity (yaw-angle)
-   * @return Translational and angular velocity combined into an Eigen::Vector2d
-   */
-  static Eigen::Vector2d tfPoseToEigenVector2dTransRot(const tf::Pose &tf_vel);
-
-  /**
    * @brief Get the current robot footprint/contour model
    * @param nh const reference to the local ros::NodeHandle
    * @return Robot footprint model used for optimization
@@ -563,8 +551,8 @@ class HATebLocalPlannerROS : public nav_core::BaseLocalPlanner, public mbf_costm
     ros::Time latest_time;
     ros::Time target_time;
 
-    tf2::CompactFrameID target_id = tf_->_lookupFrameNumber(tf::strip_leading_slash(tracking_frame));
-    tf2::CompactFrameID source_id = tf_->_lookupFrameNumber(tf::strip_leading_slash(observation_frame));
+    tf2::CompactFrameID target_id = tf_->_lookupFrameNumber(strip_leading_slash(tracking_frame));
+    tf2::CompactFrameID source_id = tf_->_lookupFrameNumber(strip_leading_slash(observation_frame));
     tf_->_getLatestCommonTime(source_id, target_id, latest_time, nullptr);
 
     if (ros::Time() == time) {
@@ -592,7 +580,7 @@ class HATebLocalPlannerROS : public nav_core::BaseLocalPlanner, public mbf_costm
     tf2::Quaternion quat_temp;
     temp.getRotation(quat_temp);
     tf2::Vector3 o = start.getBasis() * quat_temp.getAxis();
-    tfScalar ang = quat_temp.getAngle();
+    double ang = quat_temp.getAngle();
 
     double delta_x = end.getOrigin().getX() - start.getOrigin().getX();
     double delta_y = end.getOrigin().getY() - start.getOrigin().getY();
@@ -631,18 +619,19 @@ class HATebLocalPlannerROS : public nav_core::BaseLocalPlanner, public mbf_costm
     out_vel = out_vel + out_rot * delta;
     // out_rot unchanged
 
-    /*
-    printf("KDL: Rotation %f %f %f, Translation:%f %f %f\n",
-         out_rot.x(),out_rot.y(),out_rot.z(),
-         out_vel.x(),out_vel.y(),out_vel.z());
-  */
-
     twist.linear.x = out_vel.x();
     twist.linear.y = out_vel.y();
     twist.linear.z = out_vel.z();
     twist.angular.x = out_rot.x();
     twist.angular.y = out_rot.y();
     twist.angular.z = out_rot.z();
+  }
+
+  std::string strip_leading_slash(const std::string &frame_id) const {
+    if (!frame_id.empty() && frame_id[0] == '/') {
+      return frame_id.substr(1);
+    }
+    return frame_id;
   }
 
  private:

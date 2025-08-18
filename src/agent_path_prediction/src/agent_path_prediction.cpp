@@ -28,6 +28,7 @@
 #include <agent_path_prediction/predict_goal_ros.h>
 
 #include <csignal>
+#include <memory>
 #include <utility>
 
 // Reconfigurable Parameters
@@ -46,6 +47,9 @@ namespace agents {
 void AgentPathPrediction::initialize() {
   // get private node handle
   ros::NodeHandle private_nh("~/");
+
+  // Initialize tf2 listener with buffer
+  tf_listener_ = std::make_unique<tf2_ros::TransformListener>(tf_);
 
   // Load params from the server
   loadRosParamFromNodeHandle(private_nh);
@@ -224,7 +228,7 @@ bool AgentPathPrediction::predictAgentsVelObs(agent_path_prediction::AgentPosePr
         predicted_poses.id = agent.track_id;
 
         // get linear velocity of the agent
-        tf::Vector3 linear_vel(segment.twist.twist.linear.x, segment.twist.twist.linear.y, segment.twist.twist.linear.z);
+        tf2::Vector3 linear_vel(segment.twist.twist.linear.x, segment.twist.twist.linear.y, segment.twist.twist.linear.z);
 
         for (auto predict_time : req.predict_times) {
           // validate prediction time
@@ -245,7 +249,9 @@ bool AgentPathPrediction::predictAgentsVelObs(agent_path_prediction::AgentPosePr
             double alpha = std::atan2(linear_vel[1], linear_vel[0]) + (theta / 2);
             predicted_pose.pose.pose.position.x = segment.pose.pose.position.x + crd * std::cos(alpha);
             predicted_pose.pose.pose.position.y = segment.pose.pose.position.y + crd * std::sin(alpha);
-            predicted_pose.pose.pose.orientation = tf::createQuaternionMsgFromYaw(tf::getYaw(segment.pose.pose.orientation) + theta);
+            tf2::Quaternion q;
+            q.setRPY(0, 0, tf2::getYaw(segment.pose.pose.orientation) + theta);
+            predicted_pose.pose.pose.orientation = tf2::toMsg(q);
           } else {
             predicted_pose.pose.pose.position.x = segment.pose.pose.position.x + linear_vel[0] * predict_time * velobs_mul_;
             predicted_pose.pose.pose.position.y = segment.pose.pose.position.y + linear_vel[1] * predict_time * velobs_mul_;
@@ -262,7 +268,7 @@ bool AgentPathPrediction::predictAgentsVelObs(agent_path_prediction::AgentPosePr
           ROS_DEBUG_NAMED(NODE_NAME,
                           "%s: predected agent (%lu) segment (%d)"
                           " pose: x=%f, y=%f, theta=%f, predict-time=%f",
-                          NODE_NAME, agent.track_id, segment.type, predicted_pose.pose.pose.position.x, predicted_pose.pose.pose.position.y, tf::getYaw(predicted_pose.pose.pose.orientation),
+                          NODE_NAME, agent.track_id, segment.type, predicted_pose.pose.pose.position.x, predicted_pose.pose.pose.position.y, tf2::getYaw(predicted_pose.pose.pose.orientation),
                           predict_time);
         }
 
@@ -315,24 +321,26 @@ bool AgentPathPrediction::predictAgentsExternal(agent_path_prediction::AgentPose
     std::map<uint64_t, geometry_msgs::PoseStamped> ext_goal;
 
     // get robot pose
-    tf::StampedTransform robot_to_map_tf;
-    tf::StampedTransform agent_to_map_tf;
+    geometry_msgs::TransformStamped robot_to_map_tf;
+    geometry_msgs::TransformStamped agent_to_map_tf;
     bool transforms_found = false;
     try {
-      tf_.lookupTransform(map_frame_id_, robot_frame_id_, ros::Time(0), robot_to_map_tf);
+      // tf_.lookupTransform(map_frame_id_, robot_frame_id_, ros::Time(0), robot_to_map_tf);
+      robot_to_map_tf = tf_.lookupTransform(map_frame_id_, robot_frame_id_, ros::Time(0), ros::Duration(0.5));
 
       std::string agents_frame = "map";
       if (!tracked_agents.header.frame_id.empty()) {
         agents_frame = tracked_agents.header.frame_id;
       }
-      tf_.lookupTransform(map_frame_id_, agents_frame, ros::Time(0), agent_to_map_tf);
+      // tf_.lookupTransform(map_frame_id_, agents_frame, ros::Time(0), agent_to_map_tf);
+      agent_to_map_tf = tf_.lookupTransform(map_frame_id_, agents_frame, ros::Time(0), ros::Duration(0.5));
 
       transforms_found = true;
-    } catch (tf::LookupException &ex) {
+    } catch (tf2::LookupException &ex) {
       ROS_ERROR_NAMED(NODE_NAME, "No Transform available Error: %s\n", ex.what());
-    } catch (tf::ConnectivityException &ex) {
+    } catch (tf2::ConnectivityException &ex) {
       ROS_ERROR_NAMED(NODE_NAME, "Connectivity Error: %s\n", ex.what());
-    } catch (tf::ExtrapolationException &ex) {
+    } catch (tf2::ExtrapolationException &ex) {
       ROS_ERROR_NAMED(NODE_NAME, "Extrapolation Error: %s\n", ex.what());
     }
 
@@ -367,13 +375,16 @@ bool AgentPathPrediction::predictAgentsExternal(agent_path_prediction::AgentPose
           agent_start.header.stamp = now;
           agent_start.pose = segment.pose.pose;
 
-          tf::Pose start_pose_tf;
-          start_pose_tf.setRotation(tf::Quaternion(0.0, 0.0, 0.0, 1.0));
+          // TODO: Remove unncessary conversions
+          tf2::Transform start_pose_tf;
+          start_pose_tf.setRotation(tf2::Quaternion(0.0, 0.0, 0.0, 1.0));
           geometry_msgs::Pose start_pose;
           start_pose.orientation.w = 1.0;
-          tf::poseMsgToTF(agent_start.pose, start_pose_tf);
-          start_pose_tf = agent_to_map_tf * start_pose_tf;
-          tf::poseTFToMsg(start_pose_tf, start_pose);
+          tf2::fromMsg(agent_start.pose, start_pose_tf);
+          tf2::Transform agent_to_map_transform;
+          tf2::fromMsg(agent_to_map_tf.transform, agent_to_map_transform);
+          start_pose_tf = agent_to_map_transform * start_pose_tf;
+          tf2::toMsg(start_pose_tf, start_pose);
 
           if (!path_exist) {
             AgentStartPoseVel agent_start_pose_vel = {.id = agent.track_id, .pose = agent_start, .vel = segment.twist};
@@ -404,13 +415,17 @@ bool AgentPathPrediction::predictAgentsExternal(agent_path_prediction::AgentPose
           nav_msgs::GetPlan get_plan_srv;
           if (ext_goal.find(agent_start_pose_vel.id) == ext_goal.end()) continue;
           // get agent pose in map frame
-          tf::Pose start_pose_tf;
-          start_pose_tf.setRotation(tf::Quaternion(0.0, 0.0, 0.0, 1.0));
-          tf::poseMsgToTF(agent_start_pose_vel.pose.pose, start_pose_tf);
-          start_pose_tf = agent_to_map_tf * start_pose_tf;
+          // (tf2)
+          tf2::Transform start_pose_tf;
+          start_pose_tf.setRotation(tf2::Quaternion(0.0, 0.0, 0.0, 1.0));
+          tf2::fromMsg(agent_start_pose_vel.pose.pose, start_pose_tf);
+          tf2::Transform agent_to_map_transform;
+          tf2::fromMsg(agent_to_map_tf.transform, agent_to_map_transform);
+          start_pose_tf = agent_to_map_transform * start_pose_tf;
           auto start_pose_stamped = agent_start_pose_vel.pose;
-          tf::poseTFToMsg(start_pose_tf, start_pose_stamped.pose);
+          tf2::toMsg(start_pose_tf, start_pose_stamped.pose);
           auto start_path = setFixedPath(start_pose_stamped);
+          //(tf2)
 
           get_plan_srv.request.start.header.frame_id = map_frame_id_;
           get_plan_srv.request.start.header.stamp = now;
@@ -427,8 +442,8 @@ bool AgentPathPrediction::predictAgentsExternal(agent_path_prediction::AgentPose
           ROS_DEBUG_NAMED(NODE_NAME,
                           "agent start: x=%.2f, y=%.2f, theta=%.2f, "
                           "goal: x=%.2f, y=%.2f, theta=%.2f",
-                          get_plan_srv.request.start.pose.position.x, get_plan_srv.request.start.pose.position.y, tf::getYaw(get_plan_srv.request.start.pose.orientation),
-                          get_plan_srv.request.goal.pose.position.x, get_plan_srv.request.goal.pose.position.y, tf::getYaw(get_plan_srv.request.goal.pose.orientation));
+                          get_plan_srv.request.start.pose.position.x, get_plan_srv.request.start.pose.position.y, tf2::getYaw(get_plan_srv.request.start.pose.orientation),
+                          get_plan_srv.request.goal.pose.position.x, get_plan_srv.request.goal.pose.position.y, tf2::getYaw(get_plan_srv.request.goal.pose.orientation));
 
           // make plan for agent
           if (get_plan_client_) {
@@ -468,23 +483,25 @@ bool AgentPathPrediction::predictAgentsBehind(agent_path_prediction::AgentPosePr
   auto tracked_agents = tracked_agents_;
 
   // get robot pose
-  tf::StampedTransform robot_to_map_tf;
-  tf::StampedTransform agent_to_map_tf;
+  geometry_msgs::TransformStamped robot_to_map_tf;
+  geometry_msgs::TransformStamped agent_to_map_tf;
   bool transforms_found = false;
   try {
-    tf_.lookupTransform(map_frame_id_, robot_frame_id_, ros::Time(0), robot_to_map_tf);
+    // tf_.lookupTransform(map_frame_id_, robot_frame_id_, ros::Time(0), robot_to_map_tf);
+    robot_to_map_tf = tf_.lookupTransform(map_frame_id_, robot_frame_id_, ros::Time(0), ros::Duration(0.5));
     std::string agents_frame = "map";
     if (!tracked_agents.header.frame_id.empty()) {
       agents_frame = tracked_agents.header.frame_id;
     }
-    tf_.lookupTransform(map_frame_id_, agents_frame, ros::Time(0), agent_to_map_tf);
+    // tf_.lookupTransform(map_frame_id_, agents_frame, ros::Time(0), agent_to_map_tf);
+    agent_to_map_tf = tf_.lookupTransform(map_frame_id_, agents_frame, ros::Time(0), ros::Duration(0.5));
 
     transforms_found = true;
-  } catch (tf::LookupException &ex) {
+  } catch (tf2::LookupException &ex) {
     ROS_ERROR_NAMED(NODE_NAME, "No Transform available Error: %s\n", ex.what());
-  } catch (tf::ConnectivityException &ex) {
+  } catch (tf2::ConnectivityException &ex) {
     ROS_ERROR_NAMED(NODE_NAME, "Connectivity Error: %s\n", ex.what());
-  } catch (tf::ExtrapolationException &ex) {
+  } catch (tf2::ExtrapolationException &ex) {
     ROS_ERROR_NAMED(NODE_NAME, "Extrapolation Error: %s\n", ex.what());
   }
 
@@ -513,13 +530,15 @@ bool AgentPathPrediction::predictAgentsBehind(agent_path_prediction::AgentPosePr
         agent_start.header.stamp = now;
         agent_start.pose = segment.pose.pose;
 
-        tf::Pose start_pose_tf;
-        start_pose_tf.setRotation(tf::Quaternion(0.0, 0.0, 0.0, 1.0));
+        tf2::Transform start_pose_tf;
+        start_pose_tf.setRotation(tf2::Quaternion(0.0, 0.0, 0.0, 1.0));
         geometry_msgs::Pose start_pose;
         start_pose.orientation.w = 1.0;
-        tf::poseMsgToTF(agent_start.pose, start_pose_tf);
-        start_pose_tf = agent_to_map_tf * start_pose_tf;
-        tf::poseTFToMsg(start_pose_tf, start_pose);
+        tf2::fromMsg(agent_start.pose, start_pose_tf);
+        tf2::Transform agent_to_map_transform;
+        tf2::fromMsg(agent_to_map_tf.transform, agent_to_map_transform);
+        start_pose_tf = agent_to_map_transform * start_pose_tf;
+        tf2::toMsg(start_pose_tf, start_pose);
 
         if (!path_exist) {
           AgentStartPoseVel agent_start_pose_vel = {.id = agent.track_id, .pose = agent_start, .vel = segment.twist};
@@ -551,13 +570,17 @@ bool AgentPathPrediction::predictAgentsBehind(agent_path_prediction::AgentPosePr
 
         auto hum_id = agent_start_pose_vel.id;
         // get agent pose in map frame
-        tf::Pose start_pose_tf;
-        start_pose_tf.setRotation(tf::Quaternion(0.0, 0.0, 0.0, 1.0));
-        tf::poseMsgToTF(agent_start_pose_vel.pose.pose, start_pose_tf);
-        start_pose_tf = agent_to_map_tf * start_pose_tf;
+        // (tf2)
+        tf2::Transform start_pose_tf;
+        start_pose_tf.setRotation(tf2::Quaternion(0.0, 0.0, 0.0, 1.0));
+        tf2::fromMsg(agent_start_pose_vel.pose.pose, start_pose_tf);
+        tf2::Transform agent_to_map_transform;
+        tf2::fromMsg(agent_to_map_tf.transform, agent_to_map_transform);
+        start_pose_tf = agent_to_map_transform * start_pose_tf;
         auto start_pose_stamped = agent_start_pose_vel.pose;
-        tf::poseTFToMsg(start_pose_tf, start_pose_stamped.pose);
+        tf2::toMsg(start_pose_tf, start_pose_stamped.pose);
         auto start_path = setFixedPath(start_pose_stamped);
+        //(tf2)
 
         get_plan_srv.request.start.header.frame_id = map_frame_id_;
         get_plan_srv.request.start.header.stamp = now;
@@ -567,11 +590,13 @@ bool AgentPathPrediction::predictAgentsBehind(agent_path_prediction::AgentPosePr
         // calculate agent pose behind robot
         if (!check_path_) {
           check_path_ = true;
-          tf::Transform behind_tr;
-          behind_tr.setOrigin(tf::Vector3(-agent_dist_behind_robot_, 0.0, 0.0));
-          behind_tr.setRotation(tf::createQuaternionFromYaw(agent_angle_behind_robot_));
-          behind_tr = robot_to_map_tf * behind_tr;
-          tf::transformTFToMsg(behind_tr, behind_pose_);
+          tf2::Transform behind_tr;
+          behind_tr.setOrigin(tf2::Vector3(-agent_dist_behind_robot_, 0.0, 0.0));
+          behind_tr.setRotation(tf2::Quaternion(0, 0, sin(agent_angle_behind_robot_ / 2.0), cos(agent_angle_behind_robot_ / 2.0)));
+          tf2::Transform robot_to_map_transform;
+          tf2::fromMsg(robot_to_map_tf.transform, robot_to_map_transform);
+          behind_tr = robot_to_map_transform * behind_tr;
+          behind_pose_ = tf2::toMsg(behind_tr);
         }
         get_plan_srv.request.goal.header.frame_id = map_frame_id_;
         get_plan_srv.request.goal.header.stamp = now;
@@ -583,8 +608,8 @@ bool AgentPathPrediction::predictAgentsBehind(agent_path_prediction::AgentPosePr
         ROS_DEBUG_NAMED(NODE_NAME,
                         "agent start: x=%.2f, y=%.2f, theta=%.2f, "
                         "goal: x=%.2f, y=%.2f, theta=%.2f",
-                        get_plan_srv.request.start.pose.position.x, get_plan_srv.request.start.pose.position.y, tf::getYaw(get_plan_srv.request.start.pose.orientation),
-                        get_plan_srv.request.goal.pose.position.x, get_plan_srv.request.goal.pose.position.y, tf::getYaw(get_plan_srv.request.goal.pose.orientation));
+                        get_plan_srv.request.start.pose.position.x, get_plan_srv.request.start.pose.position.y, tf2::getYaw(get_plan_srv.request.start.pose.orientation),
+                        get_plan_srv.request.goal.pose.position.x, get_plan_srv.request.goal.pose.position.y, tf2::getYaw(get_plan_srv.request.goal.pose.orientation));
 
         // make plan for agent
         if (get_plan_client_) {
@@ -626,23 +651,25 @@ bool AgentPathPrediction::predictAgentsGoal(agent_path_prediction::AgentPosePred
   }
 
   // get robot pose
-  tf::StampedTransform robot_to_map_tf;
-  tf::StampedTransform agent_to_map_tf;
+  geometry_msgs::TransformStamped robot_to_map_tf;
+  geometry_msgs::TransformStamped agent_to_map_tf;
   bool transforms_found = false;
   try {
-    tf_.lookupTransform(map_frame_id_, robot_frame_id_, ros::Time(0), robot_to_map_tf);
+    // tf_.lookupTransform(map_frame_id_, robot_frame_id_, ros::Time(0), robot_to_map_tf);
+    robot_to_map_tf = tf_.lookupTransform(map_frame_id_, robot_frame_id_, ros::Time(0), ros::Duration(0.5));
     std::string agents_frame = "map";
     if (!tracked_agents.header.frame_id.empty()) {
       agents_frame = tracked_agents.header.frame_id;
     }
-    tf_.lookupTransform(map_frame_id_, agents_frame, ros::Time(0), agent_to_map_tf);
+    // tf_.lookupTransform(map_frame_id_, agents_frame, ros::Time(0), agent_to_map_tf);
+    agent_to_map_tf = tf_.lookupTransform(map_frame_id_, agents_frame, ros::Time(0), ros::Duration(0.5));
 
     transforms_found = true;
-  } catch (tf::LookupException &ex) {
+  } catch (tf2::LookupException &ex) {
     ROS_ERROR_NAMED(NODE_NAME, "No Transform available Error: %s\n", ex.what());
-  } catch (tf::ConnectivityException &ex) {
+  } catch (tf2::ConnectivityException &ex) {
     ROS_ERROR_NAMED(NODE_NAME, "Connectivity Error: %s\n", ex.what());
-  } catch (tf::ExtrapolationException &ex) {
+  } catch (tf2::ExtrapolationException &ex) {
     ROS_ERROR_NAMED(NODE_NAME, "Extrapolation Error: %s\n", ex.what());
   }
 
@@ -672,13 +699,17 @@ bool AgentPathPrediction::predictAgentsGoal(agent_path_prediction::AgentPosePred
         agent_start.header.stamp = now;
         agent_start.pose = segment.pose.pose;
 
-        tf::Pose start_pose_tf;
-        start_pose_tf.setRotation(tf::Quaternion(0.0, 0.0, 0.0, 1.0));
+        //(tf2)
+        tf2::Transform start_pose_tf;
+        start_pose_tf.setRotation(tf2::Quaternion(0.0, 0.0, 0.0, 1.0));
         geometry_msgs::Pose start_pose;
         start_pose.orientation.w = 1.0;
-        tf::poseMsgToTF(agent_start.pose, start_pose_tf);
-        start_pose_tf = agent_to_map_tf * start_pose_tf;
-        tf::poseTFToMsg(start_pose_tf, start_pose);
+        tf2::fromMsg(agent_start.pose, start_pose_tf);
+        tf2::Transform agent_to_map_transform;
+        tf2::fromMsg(agent_to_map_tf.transform, agent_to_map_transform);
+        start_pose_tf = agent_to_map_transform * start_pose_tf;
+        tf2::toMsg(start_pose_tf, start_pose);
+        //(tf2)
 
         if (!path_exist || predicted_goals_.header.stamp.toSec() < 1) {
           AgentStartPoseVel agent_start_pose_vel = {.id = agent.track_id, .pose = agent_start, .vel = segment.twist};
@@ -710,13 +741,17 @@ bool AgentPathPrediction::predictAgentsGoal(agent_path_prediction::AgentPosePred
         nav_msgs::GetPlan get_plan_srv;
 
         // get agent pose in map frame
-        tf::Pose start_pose_tf;
-        start_pose_tf.setRotation(tf::Quaternion(0.0, 0.0, 0.0, 1.0));
-        tf::poseMsgToTF(agent_start_pose_vel.pose.pose, start_pose_tf);
-        start_pose_tf = agent_to_map_tf * start_pose_tf;
+        // (tf2)
+        tf2::Transform start_pose_tf;
+        start_pose_tf.setRotation(tf2::Quaternion(0.0, 0.0, 0.0, 1.0));
+        tf2::fromMsg(agent_start_pose_vel.pose.pose, start_pose_tf);
+        tf2::Transform agent_to_map_transform;
+        tf2::fromMsg(agent_to_map_tf.transform, agent_to_map_transform);
+        start_pose_tf = agent_to_map_transform * start_pose_tf;
         auto start_pose_stamped = agent_start_pose_vel.pose;
-        tf::poseTFToMsg(start_pose_tf, start_pose_stamped.pose);
+        tf2::toMsg(start_pose_tf, start_pose_stamped.pose);
         auto start_path = setFixedPath(start_pose_stamped);
+        //(tf2)
 
         get_plan_srv.request.start.header.frame_id = map_frame_id_;
         get_plan_srv.request.start.header.stamp = now;
@@ -730,8 +765,8 @@ bool AgentPathPrediction::predictAgentsGoal(agent_path_prediction::AgentPosePred
         ROS_DEBUG_NAMED(NODE_NAME,
                         "agent start: x=%.2f, y=%.2f, theta=%.2f, "
                         "goal: x=%.2f, y=%.2f, theta=%.2f",
-                        get_plan_srv.request.start.pose.position.x, get_plan_srv.request.start.pose.position.y, tf::getYaw(get_plan_srv.request.start.pose.orientation),
-                        get_plan_srv.request.goal.pose.position.x, get_plan_srv.request.goal.pose.position.y, tf::getYaw(get_plan_srv.request.goal.pose.orientation));
+                        get_plan_srv.request.start.pose.position.x, get_plan_srv.request.start.pose.position.y, tf2::getYaw(get_plan_srv.request.start.pose.orientation),
+                        get_plan_srv.request.goal.pose.position.x, get_plan_srv.request.goal.pose.position.y, tf2::getYaw(get_plan_srv.request.goal.pose.orientation));
 
         // make plan for agent
         if (get_plan_client_) {
@@ -800,15 +835,8 @@ bool AgentPathPrediction::predictAgentsFromPaths(agent_path_prediction::AgentPos
           }
         }
         last_predicted_poses_.push_back(predicted_poses);
-
         last_prune_indices_.erase(predicted_poses.id);
 
-        // for (auto it = tracked_agents.agents.begin(); it != tracked_agents.agents.end(); ++it) {  // TODD: Check this, remove for now
-        //   if (it->track_id == predicted_poses.id) {
-        //     tracked_agents.agents.erase(it);
-        //     break;
-        //   }
-        // }
         ROS_DEBUG_NAMED(NODE_NAME, "Processed new path for agent %ld with %ld poses in frame %s", agent_path_vel.id, predicted_poses.poses.size(),
                         predicted_poses.poses.front().header.frame_id.c_str());
       }
@@ -980,30 +1008,33 @@ bool AgentPathPrediction::transformPoseTwist(const cohan_msgs::TrackedAgents &tr
           twist.header.frame_id = tracked_agents.header.frame_id;
           twist.twist = segment.twist.twist;
           try {
-            tf::Stamped<tf::Pose> pose_tf;
-            tf::poseStampedMsgToTF(pose_ut, pose_tf);
-            tf::StampedTransform start_pose_to_plan_transform;
+            tf2::Stamped<tf2::Transform> pose_tf;
+            tf2::fromMsg(pose_ut, pose_tf);
+            geometry_msgs::TransformStamped start_pose_to_plan_transform;
+
             if (to_frame.empty() || pose_ut.header.frame_id.empty() || twist.header.frame_id.empty()) {
               continue;
             }
-            tf_.waitForTransform(to_frame, pose_ut.header.frame_id, ros::Time(0), ros::Duration(0.5));
-            tf_.lookupTransform(to_frame, pose_ut.header.frame_id, ros::Time(0), start_pose_to_plan_transform);
-            pose_tf.setData(start_pose_to_plan_transform * pose_tf);
+            tf_.canTransform(to_frame, pose_ut.header.frame_id, ros::Time(0), ros::Duration(0.5));
+            start_pose_to_plan_transform = tf_.lookupTransform(to_frame, pose_ut.header.frame_id, ros::Time(0), ros::Duration(1.0));
+            tf2::Transform start_transform;
+            tf2::fromMsg(start_pose_to_plan_transform.transform, start_transform);
+            pose_tf.setData(start_transform * pose_tf);
             pose_tf.frame_id_ = to_frame;
-            tf::poseStampedTFToMsg(pose_tf, pose);
+            tf2::toMsg(pose_tf, pose);
 
             geometry_msgs::Twist start_twist_to_plan_transform;
-            tf_.lookupTwist(to_frame, twist.header.frame_id, ros::Time::now(), ros::Duration(0.1), start_twist_to_plan_transform);
-            twist.twist.linear.x -= start_twist_to_plan_transform.linear.x;
-            twist.twist.linear.y -= start_twist_to_plan_transform.linear.y;
-            twist.twist.angular.z -= start_twist_to_plan_transform.angular.z;
+            lookupTwist(to_frame, twist.header.frame_id, ros::Time::now(), ros::Duration(0.1), start_twist_to_plan_transform);
+            twist.twist.linear.x = start_twist_to_plan_transform.linear.x;
+            twist.twist.linear.y = start_twist_to_plan_transform.linear.y;
+            twist.twist.angular.z = start_twist_to_plan_transform.angular.z;
             twist.header.frame_id = to_frame;
             return true;
-          } catch (tf::LookupException &ex) {
+          } catch (tf2::LookupException &ex) {
             ROS_ERROR_NAMED(NODE_NAME, "No Transform available Error: %s\n", ex.what());
-          } catch (tf::ConnectivityException &ex) {
+          } catch (tf2::ConnectivityException &ex) {
             ROS_ERROR_NAMED(NODE_NAME, "Connectivity Error: %s\n", ex.what());
-          } catch (tf::ExtrapolationException &ex) {
+          } catch (tf2::ExtrapolationException &ex) {
             ROS_ERROR_NAMED(NODE_NAME, "Extrapolation Error: %s\n", ex.what());
           }
           break;
@@ -1013,6 +1044,37 @@ bool AgentPathPrediction::transformPoseTwist(const cohan_msgs::TrackedAgents &tr
     }
   }
   return false;
+}
+
+geometry_msgs::TwistStamped AgentPathPrediction::transformTwist(const geometry_msgs::TwistStamped &twist_in, const std::string &target_frame) const {
+  geometry_msgs::TransformStamped transformStamped = tf_.lookupTransform(target_frame, twist_in.header.frame_id, ros::Time(0), ros::Duration(0.1));
+
+  // Extract rotation
+  tf2::Quaternion q(transformStamped.transform.rotation.x, transformStamped.transform.rotation.y, transformStamped.transform.rotation.z, transformStamped.transform.rotation.w);
+  tf2::Matrix3x3 rot_matrix(q);
+
+  // Rotate linear velocity
+  tf2::Vector3 lin_vel(twist_in.twist.linear.x, twist_in.twist.linear.y, twist_in.twist.linear.z);
+  tf2::Vector3 lin_rotated = rot_matrix * lin_vel;
+
+  // Rotate angular velocity
+  tf2::Vector3 ang_vel(twist_in.twist.angular.x, twist_in.twist.angular.y, twist_in.twist.angular.z);
+  tf2::Vector3 ang_rotated = rot_matrix * ang_vel;
+
+  // Fill output
+  geometry_msgs::TwistStamped twist_out;
+  twist_out.header.stamp = twist_in.header.stamp;
+  twist_out.header.frame_id = target_frame;
+
+  twist_out.twist.linear.x = lin_rotated.x();
+  twist_out.twist.linear.y = lin_rotated.y();
+  twist_out.twist.linear.z = lin_rotated.z();
+
+  twist_out.twist.angular.x = ang_rotated.x();
+  twist_out.twist.angular.y = ang_rotated.y();
+  twist_out.twist.angular.z = ang_rotated.z();
+
+  return twist_out;
 }
 
 }  // namespace agents

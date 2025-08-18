@@ -46,7 +46,6 @@
 
 // ros
 #include <base_local_planner/costmap_model.h>
-#include <tf/transform_datatypes.h>
 
 // this package
 #include <hateb_local_planner/pose_se2.h>
@@ -103,20 +102,6 @@ class PlannerInterface {
   virtual bool plan(const std::vector<geometry_msgs::PoseStamped>& initial_plan, const geometry_msgs::Twist* start_vel = nullptr, bool free_goal_vel = false,
                     const AgentPlanVelMap* initial_agent_plan_vels = nullptr, hateb_local_planner::OptimizationCostArray* op_costs = nullptr, double dt_ref = 0.4, double dt_hyst = 0.1,
                     int Mode = 0) = 0;
-
-  /**
-   * @brief Plan a trajectory between a given start and goal pose (tf::Pose version).
-   *
-   * Provide this method to create and optimize a trajectory that is initialized between a given start and goal pose.
-   * @param start tf::Pose containing the start pose of the trajectory
-   * @param goal tf::Pose containing the goal pose of the trajectory
-   * @param start_vel Current start velocity (e.g. the velocity of the robot, only linear.x and angular.z are used)
-   * @param free_goal_vel if \c true, a nonzero final velocity at the goal pose is allowed,
-   *        otherwise the final velocity will be zero (default: false)
-   * @return \c true if planning was successful, \c false otherwise
-   */
-  virtual bool plan(const tf::Pose& start, const tf::Pose& goal, const geometry_msgs::Twist* start_vel = nullptr, bool free_goal_vel = false,
-                    hateb_local_planner::OptimizationCostArray* op_costs = nullptr, double dt_ref = 0.4, double dt_hyst = 0.1, int Mode = 0) = 0;
 
   /**
    * @brief Plan a trajectory between a given start and goal pose.

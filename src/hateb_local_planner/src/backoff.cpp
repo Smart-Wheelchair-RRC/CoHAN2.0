@@ -49,6 +49,9 @@ void Backoff::initialize(costmap_2d::Costmap2DROS *costmap_ros) {
   // get private node handle
   ros::NodeHandle nh("~");
 
+  // Initialize tf2 listener with buffer
+  tf_listener_ = std::make_unique<tf2_ros::TransformListener>(tf_);
+
   // Load the parameters from the ros handle
   loadRosParamFromNodeHandle(nh);
 
@@ -95,14 +98,17 @@ bool Backoff::startRecovery() {
   auto r = robot_circumscribed_radius_;
 
   // Get the transform from robot frame to map frame
+  geometry_msgs::TransformStamped robot_to_map_tr;
   try {
-    tf_.lookupTransform(map_frame_, footprint_frame_, ros::Time(0), robot_to_map_tf_);
+    robot_to_map_tr = tf_.lookupTransform(map_frame_, footprint_frame_, ros::Time(0), ros::Duration(0.5));
     transform_found = true;
-  } catch (tf::LookupException &ex) {
+    tf2::fromMsg(robot_to_map_tr.transform, robot_to_map_tf_);
+
+  } catch (tf2::LookupException &ex) {
     ROS_ERROR_NAMED(NODE_NAME, "No Transform available Error: %s\n", ex.what());
-  } catch (tf::ConnectivityException &ex) {
+  } catch (tf2::ConnectivityException &ex) {
     ROS_ERROR_NAMED(NODE_NAME, "Connectivity Error: %s\n", ex.what());
-  } catch (tf::ExtrapolationException &ex) {
+  } catch (tf2::ExtrapolationException &ex) {
     ROS_ERROR_NAMED(NODE_NAME, "Extrapolation Error: %s\n", ex.what());
   }
 
@@ -131,17 +137,22 @@ bool Backoff::startRecovery() {
     std::vector<geometry_msgs::PoseStamped> goals;
     nav_msgs::GetPlan get_plan_srv;
     get_plan_srv.request.start.header.frame_id = "map";
-    tf::poseTFToMsg(robot_to_map_tf_, get_plan_srv.request.start.pose);
-
+    get_plan_srv.request.start.pose.position.x = robot_to_map_tr.transform.translation.x;
+    get_plan_srv.request.start.pose.position.y = robot_to_map_tr.transform.translation.y;
+    get_plan_srv.request.start.pose.position.z = robot_to_map_tr.transform.translation.z;
+    get_plan_srv.request.start.pose.orientation = robot_to_map_tr.transform.rotation;
     get_plan_srv.request.goal.header.frame_id = "map";
 
     // Start the search
     while (true) {
-      start_pose_tr_.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
-      start_pose_tr_.setRotation(tf::createQuaternionFromYaw(search_angle));
+      start_pose_tr_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
+      tf2::Quaternion q;
+      q.setRPY(0, 0, search_angle);
+      start_pose_tr_.setRotation(q);
       start_pose_tr_ = robot_to_map_tf_ * start_pose_tr_;
-      tf::transformTFToMsg(start_pose_tr_, start_pose_);
+      start_pose_ = tf2::toMsg(start_pose_tr_);
       robot_theta = tf2::getYaw(start_pose_.rotation);
+
       // Clearing visualizes only the lastest search angle.
       // left_grid_vis.clear();
       // right_grid_vis.clear();
@@ -150,7 +161,7 @@ bool Backoff::startRecovery() {
       // TODO: Needs to configure or adjust this number
       for (int i = 0; i < 50; i++) {
         if (visualize_backoff_) {
-          tf::Vector3 point_tf;
+          tf2::Vector3 point_tf;
           point_tf.setZero();
 
           // Get the configuration on right
@@ -192,11 +203,11 @@ bool Backoff::startRecovery() {
         }
 
         // Find the polygon center on right
-        auto r_center = tf::Vector3(-back_dist, -2 * r, 0.0);
+        auto r_center = tf2::Vector3(-back_dist, -2 * r, 0.0);
         r_center = start_pose_tr_ * r_center;
 
-        // FInd the polygon center on left
-        auto l_center = tf::Vector3(-back_dist, 2 * r, 0.0);
+        // Find the polygon center on left
+        auto l_center = tf2::Vector3(-back_dist, 2 * r, 0.0);
         l_center = start_pose_tr_ * l_center;
 
         // Check overlap with costmap (right)
@@ -280,10 +291,12 @@ bool Backoff::startRecovery() {
 
   // Finally publish the backoff goal
   self_published_ = true;
-  start_pose_tr_.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
-  start_pose_tr_.setRotation(tf::createQuaternionFromYaw(0.0));
+  start_pose_tr_.setOrigin(tf2::Vector3(0.0, 0.0, 0.0));
+  tf2::Quaternion q;
+  q.setRPY(0, 0, 0);
+  start_pose_tr_.setRotation(q);
   start_pose_tr_ = robot_to_map_tf_ * start_pose_tr_;
-  tf::transformTFToMsg(start_pose_tr_, start_pose_);
+  start_pose_ = tf2::toMsg(start_pose_tr_);
 
   goal_pub_.publish(backoff_goal_);
   last_time_ = ros::Time::now();
@@ -308,19 +321,21 @@ bool Backoff::timeOut() {
 
 bool Backoff::isBackoffGoalReached() {
   // Get the transform from robot frame to map frame
+  geometry_msgs::TransformStamped robot_to_map_tr;
   try {
-    tf_.lookupTransform(map_frame_, footprint_frame_, ros::Time(0), robot_to_map_tf_);
-  } catch (tf::LookupException &ex) {
+    robot_to_map_tr = tf_.lookupTransform(map_frame_, footprint_frame_, ros::Time(0), ros::Duration(0.5));
+
+  } catch (tf2::LookupException &ex) {
     ROS_ERROR_NAMED(NODE_NAME, "No Transform available Error: %s\n", ex.what());
-  } catch (tf::ConnectivityException &ex) {
+  } catch (tf2::ConnectivityException &ex) {
     ROS_ERROR_NAMED(NODE_NAME, "Connectivity Error: %s\n", ex.what());
-  } catch (tf::ExtrapolationException &ex) {
+  } catch (tf2::ExtrapolationException &ex) {
     ROS_ERROR_NAMED(NODE_NAME, "Extrapolation Error: %s\n", ex.what());
   }
 
   // True if Backoff goal is reached
-  double delta_orient = normalize_angle(tf2::getYaw(backoff_goal_.pose.orientation) - tf::getYaw(robot_to_map_tf_.getRotation()));
-  double dg = std::hypot(backoff_goal_.pose.position.x - robot_to_map_tf_.getOrigin().x(), backoff_goal_.pose.position.y - robot_to_map_tf_.getOrigin().y());
+  double delta_orient = normalize_angle(tf2::getYaw(backoff_goal_.pose.orientation) - tf2::getYaw(robot_to_map_tr.transform.rotation));
+  double dg = std::hypot(backoff_goal_.pose.position.x - robot_to_map_tr.transform.translation.x, backoff_goal_.pose.position.y - robot_to_map_tr.transform.translation.y);
 
   return fabs(dg) < 0.1 && fabs(delta_orient) < 0.1;
 }

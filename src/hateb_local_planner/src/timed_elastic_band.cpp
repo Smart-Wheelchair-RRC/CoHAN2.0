@@ -342,7 +342,7 @@ bool TimedElasticBand::initTrajectoryToGoal(const std::vector<geometry_msgs::Pos
           yaw = g2o::normalize_theta(yaw + M_PI);
         }
       } else {
-        yaw = tf::getYaw(plan[i].pose.orientation);
+        yaw = tf2::getYaw(plan[i].pose.orientation);
       }
       PoseSE2 intermediate_pose(plan[i].pose.position.x, plan[i].pose.position.y, yaw);
       double dt = estimateDeltaT(BackPose(), intermediate_pose, max_vel_x, max_vel_theta);

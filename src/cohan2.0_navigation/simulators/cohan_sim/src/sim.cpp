@@ -381,9 +381,10 @@ bool Simulator2D::canMove(Entity& e, double x, double y) {
 }
 
 void Simulator2D::moveHolonomic(Entity& e, double dt) {
-  auto world_vel = e.getWorldVelocity();
-  double new_x = e.x() + (world_vel[0] * dt);
-  double new_y = e.y() + (world_vel[1] * dt);
+  auto world_vel_x = e.g_vx();
+  auto world_vel_y = e.g_vy();
+  double new_x = e.x() + (world_vel_x * dt);
+  double new_y = e.y() + (world_vel_y * dt);
   if (canMove(e, new_x, new_y)) {
     auto theta = e.theta();
     theta += e.omega() * dt;

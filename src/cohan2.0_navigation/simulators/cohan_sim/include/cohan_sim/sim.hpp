@@ -82,7 +82,7 @@ class Entity {
    * @param radius Collision radius for obstacle checking
    * @param color Visual appearance color
    */
-  Entity(double x, double y, double theta, double radius, SDL_Color color) : x_(x), y_(y), theta_(theta), radius_(radius), color_(color), vx_(0.0), vy_(0.0), omega_(0.0) {}
+  Entity(double x, double y, double theta, double radius, SDL_Color color) : x_(x), y_(y), theta_(theta), radius_(radius), color_(color) {}
 
   /**
    * @brief Get current X position
@@ -133,6 +133,24 @@ class Entity {
   double omega() const { return omega_; }
 
   /**
+   * @brief Get X velocity in global frame
+   * @return Linear velocity in x direction
+   */
+  double g_vx() const { return g_vx_; }
+
+  /**
+   * @brief Get Y velocity in global frame
+   * @return Linear velocity in y direction
+   */
+  double g_vy() const { return g_vy_; }
+
+  /**
+   * @brief Get angular velocity in global frame
+   * @return Angular velocity in radians/sec
+   */
+  double g_omega() const { return g_omega_; }
+
+  /**
    * @brief Set entity's position and orientation
    * @param x New X position
    * @param y New Y position
@@ -143,16 +161,19 @@ class Entity {
     y_ = y;
     theta_ = theta;
   }
+
   /**
    * @brief Set entity's velocities
    * @param vx Linear X velocity
    * @param vy Linear Y velocity
    * @param omega Angular velocity
    */
+
   void setVelocity(double vx, double vy, double omega) {
     vx_ = vx;
     vy_ = vy;
     omega_ = omega;
+    updateGlobalVelocities();
   }
 
   /**
@@ -199,11 +220,10 @@ class Entity {
 
   /**
    * @brief Updates the entity's vx, vy from local (body) frame to world frame using current heading
-   * @return std::vector<double> containing world-frame vx and vy
+   * @return None
    */
-  std::vector<double> getWorldVelocity() const {
-    std::vector<double> world_vel(2);
-
+  void updateGlobalVelocities() {
+    // Update global velocities based on current local velocities and orientation
     double cos_t = cos(theta_);
     double sin_t = sin(theta_);
 
@@ -211,16 +231,41 @@ class Entity {
     double vx_world = (vx_ * cos_t) - (vy_ * sin_t);
     double vy_world = (vx_ * sin_t) + (vy_ * cos_t);
 
-    world_vel[0] = vx_world;
-    world_vel[1] = vy_world;
-    return world_vel;
+    // Store the global velocity in member variables
+    g_vx_ = vx_world;
+    g_vy_ = vy_world;
+    g_omega_ = omega_;
   }
 
+  // /**
+  //  * @brief Updates the entity's vx, vy from local (body) frame to world frame using current heading
+  //  * @return std::vector<double> containing world-frame vx and vy
+  //  */
+  // std::vector<double> getWorldVelocity() {
+  //   std::vector<double> world_vel(2);
+
+  //   double cos_t = cos(theta_);
+  //   double sin_t = sin(theta_);
+
+  //   // Correct transformation from local to world frame
+  //   double vx_world = (vx_ * cos_t) - (vy_ * sin_t);
+  //   double vy_world = (vx_ * sin_t) + (vy_ * cos_t);
+
+  //   // Store the global velocity in member variables
+  //   g_vx_ = vx_world;
+  //   g_vy_ = vy_world;
+  //   g_omega_ = omega_;
+
+  //   world_vel[0] = vx_world;
+  //   world_vel[1] = vy_world;
+  //   return world_vel;
+  // }
+
  private:
-  double x_, y_, theta_;    //!< Position and orientation in world frame
-  double radius_;           //!< Collision radius for entity interactions
-  SDL_Color color_;         //!< Visual appearance color
-  double vx_, vy_, omega_;  //!< Current linear and angular velocities
+  double x_, y_, theta_;                                        //!< Position and orientation in world frame
+  double radius_;                                               //!< Collision radius for entity interactions
+  SDL_Color color_;                                             //!< Visual appearance color
+  double vx_{}, vy_{}, omega_{}, g_vx_{}, g_vy_{}, g_omega_{};  //!< Current linear and angular velocities
 };
 
 /**
