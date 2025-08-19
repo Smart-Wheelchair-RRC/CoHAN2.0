@@ -35,7 +35,7 @@
   </include>
 
   <!-- Rviz -->
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cohan_stage_navigation)/rviz/cohan_stage.rviz" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cohan_stage_navigation)/rviz/cohan_stage_human.rviz" />
 </launch>
 
 

@@ -33,6 +33,6 @@
   </include>
 
   <!-- Start RViZ -->
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cohan_sim_navigation)/rviz/cohan_sim.rviz" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cohan_sim_navigation)/rviz/cohan_sim_human.rviz" />
 
 </launch>
