@@ -1046,37 +1046,6 @@ bool AgentPathPrediction::transformPoseTwist(const cohan_msgs::TrackedAgents &tr
   return false;
 }
 
-geometry_msgs::TwistStamped AgentPathPrediction::transformTwist(const geometry_msgs::TwistStamped &twist_in, const std::string &target_frame) const {
-  geometry_msgs::TransformStamped transformStamped = tf_.lookupTransform(target_frame, twist_in.header.frame_id, ros::Time(0), ros::Duration(0.1));
-
-  // Extract rotation
-  tf2::Quaternion q(transformStamped.transform.rotation.x, transformStamped.transform.rotation.y, transformStamped.transform.rotation.z, transformStamped.transform.rotation.w);
-  tf2::Matrix3x3 rot_matrix(q);
-
-  // Rotate linear velocity
-  tf2::Vector3 lin_vel(twist_in.twist.linear.x, twist_in.twist.linear.y, twist_in.twist.linear.z);
-  tf2::Vector3 lin_rotated = rot_matrix * lin_vel;
-
-  // Rotate angular velocity
-  tf2::Vector3 ang_vel(twist_in.twist.angular.x, twist_in.twist.angular.y, twist_in.twist.angular.z);
-  tf2::Vector3 ang_rotated = rot_matrix * ang_vel;
-
-  // Fill output
-  geometry_msgs::TwistStamped twist_out;
-  twist_out.header.stamp = twist_in.header.stamp;
-  twist_out.header.frame_id = target_frame;
-
-  twist_out.twist.linear.x = lin_rotated.x();
-  twist_out.twist.linear.y = lin_rotated.y();
-  twist_out.twist.linear.z = lin_rotated.z();
-
-  twist_out.twist.angular.x = ang_rotated.x();
-  twist_out.twist.angular.y = ang_rotated.y();
-  twist_out.twist.angular.z = ang_rotated.z();
-
-  return twist_out;
-}
-
 }  // namespace agents
 
 // handler for something to do before killing the node
