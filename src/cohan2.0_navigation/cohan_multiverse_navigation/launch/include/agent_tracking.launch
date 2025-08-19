@@ -15,6 +15,12 @@
     <node pkg="agent_path_prediction" type="agent_path_predict" name="agent_path_predict" output="screen" >
       <param name="goals_file" value="$(find agent_path_prediction)/cfg/goals_adream.yaml"/>
     </node>
+
+    <!-- Filter the agents from laser scan -->
+    <node pkg="cohan_layers" type="agent_filter.py" name="agent_laser_filter" output="screen"
+        args="$(arg ns)" launch-prefix="bash -c 'sleep 1.0; $0 $@' ">
+    </node>
+
   </group>
 
   <!-- With namespace -->
@@ -28,6 +34,11 @@
       <remap from="map" to="/map"/>
       <param name="~robot_frame_id" value="$(arg ns)/base_footprint"/>
       <param name="goals_file" value="$(find agent_path_prediction)/cfg/goals_adream.yaml"/>
+    </node>
+
+    <!-- Filter the agents from laser scan -->
+    <node pkg="cohan_layers" type="agent_filter.py" name="agent_laser_filter" output="screen"
+        args="$(arg ns)" launch-prefix="bash -c 'sleep 1.0; $0 $@' ">
     </node>
   </group>
 

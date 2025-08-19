@@ -76,10 +76,7 @@ class MocapAgents(object):
 
         Args:
             *msg: Odometry messages for human agent.
-        """
-        if len(msg) != self.num_hum:
-            return
-    
+        """    
         tracked_agents = TrackedAgents()
         agent_segment = TrackedSegment()
         agent_segment.type = self.Segment_Type
@@ -101,11 +98,12 @@ class MocapAgents(object):
         Args:
             event (rospy.TimerEvent): The timer event.
         """
-        self.agents.header.stamp = rospy.Time.now()
-        self.agents.header.frame_id = "map"
-        self.agents.agents[0].track_id = 1
-        self.tracked_agents_pub.publish(self.agents)
- 
+        if len(self.agents.agents) > 0:
+            self.agents.header.stamp = rospy.Time.now()
+            self.agents.header.frame_id = "map"
+            self.agents.agents[0].track_id = 1
+            self.tracked_agents_pub.publish(self.agents)
+
 
 
 if __name__ == '__main__':
