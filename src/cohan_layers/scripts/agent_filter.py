@@ -67,7 +67,10 @@ class AgentFilter(object):
         @param ns Namespace for the node (optional)
         """
         rospy.init_node('agent_filter')
-        self.ns_ = ns
+        if ":=" in ns:
+            self.ns_ = ""
+        else:
+            self.ns_ = ns
         self.rate = rospy.Rate(50.0)
         self.filtered_scan = LaserScan()
         self.segment_type = TrackedSegmentType.TORSO

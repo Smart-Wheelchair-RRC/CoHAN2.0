@@ -19,6 +19,7 @@
     <!-- Filter the agents from laser scan -->
     <node pkg="cohan_layers" type="agent_filter.py" name="agent_laser_filter" output="screen"
         args="$(arg ns)" launch-prefix="bash -c 'sleep 1.0; $0 $@' ">
+      <remap from="base_scan" to="laser_scan"/>
     </node>
 
   </group>
