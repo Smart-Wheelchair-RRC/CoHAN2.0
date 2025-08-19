@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rospy
 import sys
+import math
 from geometry_msgs.msg import PoseStamped, Twist
 from nav_msgs.msg import Odometry
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
@@ -50,13 +51,24 @@ class HumanController:
         """
         Update the human pose based on the current velocity.
         """
-        dt = 0.1  # Time step
-        self.human_pose.pose.position.x += self.human_velocity.linear.x * dt
-        self.human_pose.pose.position.y += self.human_velocity.linear.y * dt
+        dt = 0.1 
+        # Get current orientation
         _, _, yaw = euler_from_quaternion([self.human_pose.pose.orientation.x,
                                             self.human_pose.pose.orientation.y,
                                             self.human_pose.pose.orientation.z,
                                             self.human_pose.pose.orientation.w])
+        
+        # Transform velocity from local frame to global frame
+        global_vel_x = (self.human_velocity.linear.x * math.cos(yaw) - 
+                       self.human_velocity.linear.y * math.sin(yaw))
+        global_vel_y = (self.human_velocity.linear.x * math.sin(yaw) + 
+                       self.human_velocity.linear.y * math.cos(yaw))
+        
+        # Update position in global frame
+        self.human_pose.pose.position.x += global_vel_x * dt
+        self.human_pose.pose.position.y += global_vel_y * dt
+        
+        # Update orientation
         yaw += self.human_velocity.angular.z * dt
         quat = quaternion_from_euler(0, 0, yaw)
         self.human_pose.pose.orientation.x = quat[0]
