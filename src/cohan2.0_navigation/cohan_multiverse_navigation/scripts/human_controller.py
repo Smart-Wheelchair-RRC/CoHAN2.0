@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import rospy
 import sys
 from geometry_msgs.msg import PoseStamped, Twist
@@ -9,6 +10,7 @@ class HumanController:
         self.ts = rospy.Subscriber('/human_cmd_vel', Twist, self.velocity_callback)
         self.pose_pub = rospy.Publisher('/cylinder_with_arrow/pose_stamped', PoseStamped, queue_size=10)
         self.base_pose_pub = rospy.Publisher('/human_pose', Odometry, queue_size=10)
+        _ = rospy.Timer(rospy.Duration(0.1), self.pose_publisher)
 
         ## Set the initial pose of the agent (can be done manually or through the topic)
         if x is None or y is None:
@@ -36,13 +38,10 @@ class HumanController:
         ## Update the human pose based on the velocity
         self.move_human()
 
-        # Publish the base pose + velocity as Odometry
-        odom_msg = Odometry()
-        odom_msg.header.stamp = rospy.Time.now()
-        odom_msg.header.frame_id = "map"
-        odom_msg.pose.pose = self.human_pose.pose
-        odom_msg.twist.twist = self.human_velocity
-        self.base_pose_pub.publish(odom_msg)
+        ## Publish the updated human pose
+        self.pose_pub.publish(self.human_pose)
+
+
 
     def move_human(self):
         """
@@ -53,6 +52,17 @@ class HumanController:
         self.human_pose.pose.position.y += self.human_velocity.linear.y * dt
         self.human_pose.pose.orientation.z += self.human_velocity.angular.z * dt   
 
+    def pose_publisher(self, event):
+        """
+        Publish the current human pose + velocity at a regular interval.
+        """
+        # Publish the base pose + velocity as Odometry
+        odom_msg = Odometry()
+        odom_msg.header.stamp = rospy.Time.now()
+        odom_msg.header.frame_id = "map"
+        odom_msg.pose.pose = self.human_pose.pose
+        odom_msg.twist.twist = self.human_velocity
+        self.base_pose_pub.publish(odom_msg)
 
 if __name__ == '__main__':
     rospy.init_node('human_controller')
