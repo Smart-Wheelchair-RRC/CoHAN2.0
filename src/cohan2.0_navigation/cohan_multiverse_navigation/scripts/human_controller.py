@@ -35,12 +35,10 @@ class HumanController:
         self.pose_pub.publish(self.human_pose)
 
     def pose_callback(self, msg):
-        rospy.loginfo("Received human pose: %s", msg)
         self.human_pose = msg
         self.pose_pub.publish(self.human_pose)
 
     def velocity_callback(self, msg):
-        rospy.loginfo("Received human velocity: %s", msg)
         self.human_velocity = msg
         ## Update the human pose based on the velocity
         self.move_human()
