@@ -17,6 +17,8 @@
     </node>
 
     <!-- Filter the agents from laser scan -->
+    <!-- This transform is needed as the agent filter looks for base_laser_link -->
+    <node pkg="tf" type="static_transform_publisher" name="base_laser_link_tf" args="0 0 0 0 0 0 /laser_mount /base_laser_link 20"/>
     <node pkg="cohan_layers" type="agent_filter.py" name="agent_laser_filter" output="screen"
         args="$(arg ns)" launch-prefix="bash -c 'sleep 1.0; $0 $@' ">
       <remap from="base_scan" to="laser_scan"/>
@@ -38,8 +40,11 @@
     </node>
 
     <!-- Filter the agents from laser scan -->
+    <!-- This transform is needed as the agent filter looks for base_laser_link -->
+    <node pkg="tf" type="static_transform_publisher" name="base_laser_link_tf" args="0 0 0 0 0 0 /laser_mount /base_laser_link 20"/>
     <node pkg="cohan_layers" type="agent_filter.py" name="agent_laser_filter" output="screen"
         args="$(arg ns)" launch-prefix="bash -c 'sleep 1.0; $0 $@' ">
+      <remap from="base_scan" to="laser_scan"/>
     </node>
   </group>
 

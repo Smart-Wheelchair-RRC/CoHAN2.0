@@ -159,7 +159,7 @@ class AgentFilter(object):
 
                 for i in range(min_idx, max_idx):
                     if(i<len(scan.ranges)):
-                        filtered_scan.ranges[i] = 7.0 #float('NaN')        
+                        filtered_scan.ranges[i] = scan.range_max        
 
         #print (filtered_scan.ranges)
         self.filtered_scan = filtered_scan
