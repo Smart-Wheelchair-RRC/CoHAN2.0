@@ -48,33 +48,6 @@
 #include <hateb_local_planner/optimal_planner.h>
 #include <hateb_local_planner/visualization.h>
 
-#define GLOBAL_PLAN_TOPIC "global_plan"
-#define LOCAL_PLAN_TOPIC "local_plan"
-#define LOCAL_TRAJ_TOPIC "local_traj"
-#define LOCAL_PLAN_POSES_TOPIC "local_plan_poses"
-#define LOCAL_PLAN_FP_POSES_TOPIC "local_plan_fp_poses"
-#define AGENT_GLOBAL_PLANS_TOPIC "agents_global_plans"
-#define AGENT_LOCAL_PLANS_TOPIC "agents_local_plans"
-#define AGENT_LOCAL_TRAJS_TOPIC "agents_local_trajs"
-#define AGENT_LOCAL_PLANS_POSES_TOPIC "agents_local_plans_poses"
-#define AGENT_LOCAL_PLANS_FP_POSES_TOPIC "agents_local_plans_fp_poses"
-#define ROBOT_FP_POSES_NS "robot_fp_poses"
-#define AGENT_FP_POSES_NS "agents_fp_poses"
-#define ROBOT_TRAJ_TIME_TOPIC "traj_time"
-#define ROBOT_PATH_TIME_TOPIC "plan_time"
-#define AGENT_TRAJS_TIME_TOPIC "agents_trajs_time"
-#define AGENT_PATHS_TIME_TOPIC "agents_plans_time"
-#define AGENT_MARKER_TOPIC "agent_marker"
-#define AGENT_ARROW_TOPIC "agent_arrow"
-#define ROBOT_NEXT_POSE_TOPIC "robot_next_pose"
-#define AGENT_NEXT_POSE_TOPIC "agent_next_pose"
-#define FEEDBACK_TOPIC "teb_feedback"
-#define TEB_MARKER_TOPIC "teb_markers"
-#define MODE_TEXT_TOPIC "mode_text"
-#define TTG_TOPIC "time_to_goal"
-#define TRACKED_AGENTS_SUB "/tracked_agents"
-#define CLEARING_TIMER_DURATION 1.0  // seconds
-
 namespace hateb_local_planner {
 
 TebVisualization::TebVisualization() : initialized_(false) {}
@@ -114,6 +87,8 @@ void TebVisualization::initialize(ros::NodeHandle &nh, const HATebConfig &cfg) {
   teb_marker_pub_ = nh.advertise<visualization_msgs::Marker>(TEB_MARKER_TOPIC, 1000);
   mode_text_pub_ = nh.advertise<visualization_msgs::Marker>(MODE_TEXT_TOPIC, 1);
   ttg_pub_ = nh.advertise<std_msgs::Float32>(TTG_TOPIC, 10);
+  crossing_point_pub_ = nh.advertise<geometry_msgs::PoseArray>(CROSSING_POINT_TOPIC, 10);
+  crossing_info_pub_ = nh.advertise<cohan_msgs::CrossingInfo>(CROSSING_INFO_TOPIC, 10);
 
   last_publish_robot_global_plan_ = cfg_->visualization.publish_robot_global_plan;
   last_publish_robot_local_plan_ = cfg_->visualization.publish_robot_local_plan;
@@ -482,6 +457,57 @@ void TebVisualization::publishAgentLocalPlansAndPoses(const std::map<uint64_t, T
   }
 }
 
+void TebVisualization::publishCrossingPoses(const TimedElasticBand &teb, const std::map<uint64_t, TimedElasticBand> &agents_tebs_map) {
+  geometry_msgs::PoseArray pose_array;
+  pose_array.header.stamp = ros::Time::now();
+  pose_array.header.frame_id = "map";
+  cohan_msgs::CrossingInfo crossing_info;
+
+  for (auto &agent_teb_kv : agents_tebs_map) {
+    auto &agent_id = agent_teb_kv.first;
+    auto &agent_teb = agent_teb_kv.second;
+    crossing_info.agent_ids.push_back(agent_id);
+
+    if (agent_teb.sizePoses() == 0) {
+      continue;
+    }
+    std::vector<float> dists;
+    auto n = std::min(teb.sizePoses(), agent_teb.sizePoses());
+    float time = 0.0;
+    std::vector<float> times;
+    for (unsigned int i = 0; i < n; i++) {
+      Eigen::Vector2d human_pose;
+      human_pose.coeffRef(0) = agent_teb.Pose(i).x();
+      human_pose.coeffRef(1) = agent_teb.Pose(i).y();
+
+      Eigen::Vector2d robot_pose;
+      robot_pose.coeffRef(0) = teb.Pose(i).x();
+      robot_pose.coeffRef(1) = teb.Pose(i).y();
+      if (i < (teb.sizePoses() - 1)) {
+        time += teb.TimeDiff(i);
+        times.push_back(time);
+      }
+      dists.push_back((human_pose - robot_pose).norm());
+    }
+    auto min_it = std::min_element(dists.begin(), dists.end());
+    int min_index = std::distance(dists.begin(), min_it);
+
+    crossing_info.times.push_back(times[min_index]);
+    crossing_info.distances.push_back(*min_it);
+    crossing_info.indices.push_back(min_index);
+
+    geometry_msgs::Pose pose;
+    pose.position.x = teb.Pose(min_index).x();
+    pose.position.y = teb.Pose(min_index).y();
+    tf2::Quaternion q;
+    q.setRPY(0, 0, teb.Pose(min_index).theta());
+    pose.orientation = tf2::toMsg(q);
+    pose_array.poses.push_back(pose);
+  }
+  crossing_point_pub_.publish(pose_array);
+  crossing_info_pub_.publish(crossing_info);
+}
+
 void TebVisualization::publishAgentTrajectories(const std::vector<AgentPlanTrajCombined> &agents_plans_combined) {
   if (printErrorWhenNotInitialized() || !cfg_->visualization.publish_agents_local_plans) {
     return;
@@ -575,7 +601,7 @@ void TebVisualization::publishAgentTrajectories(const std::vector<AgentPlanTrajC
   }
 }
 
-void TebVisualization::publishMode(int Mode) {
+void TebVisualization::publishMode(int mode) {
   bool transform_found = false;
   geometry_msgs::TransformStamped robot_to_map_tr;
   try {
@@ -613,19 +639,19 @@ void TebVisualization::publishMode(int Mode) {
   mode_text.pose = start_pose;
   mode_text.pose.position.z = 2.0;
 
-  if (Mode == -1)
+  if (mode == -1)
     mode_text.text = "SingleBand";
-  else if (Mode == 0)
+  else if (mode == 0)
     mode_text.text = "DualBand";
-  else if (Mode == 1)
+  else if (mode == 1)
     mode_text.text = "VelObs";
-  else if (Mode == 2)
+  else if (mode == 2)
     mode_text.text = "Backoff";
-  else if (Mode == 3)
+  else if (mode == 3)
     mode_text.text = "PassingThrough";
-  else if (Mode == 4)
+  else if (mode == 4)
     mode_text.text = "ApproachingPillar";
-  else if (Mode == 5)
+  else if (mode == 5)
     mode_text.text = "ApproachingGoal";
   else
     mode_text.text = "No Mode yet";

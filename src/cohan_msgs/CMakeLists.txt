@@ -37,6 +37,7 @@ add_message_files(DIRECTORY msg
   PointArray.msg
   PassageType.msg
   Predictions.msg
+  CrossingInfo.msg
 )
 
 add_service_files(

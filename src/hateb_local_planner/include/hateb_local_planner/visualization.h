@@ -67,6 +67,7 @@
 #include <cohan_msgs/AgentTimeToGoal.h>
 #include <cohan_msgs/AgentTimeToGoalArray.h>
 #include <cohan_msgs/AgentTrajectoryArray.h>
+#include <cohan_msgs/CrossingInfo.h>
 #include <cohan_msgs/TrackedAgents.h>
 #include <cohan_msgs/TrackedSegmentType.h>
 #include <cohan_msgs/TrajectoryPoint.h>
@@ -79,6 +80,35 @@
 #include <std_msgs/Float32.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+
+#define GLOBAL_PLAN_TOPIC "global_plan"
+#define LOCAL_PLAN_TOPIC "local_plan"
+#define LOCAL_TRAJ_TOPIC "local_traj"
+#define LOCAL_PLAN_POSES_TOPIC "local_plan_poses"
+#define LOCAL_PLAN_FP_POSES_TOPIC "local_plan_fp_poses"
+#define AGENT_GLOBAL_PLANS_TOPIC "agents_global_plans"
+#define AGENT_LOCAL_PLANS_TOPIC "agents_local_plans"
+#define AGENT_LOCAL_TRAJS_TOPIC "agents_local_trajs"
+#define AGENT_LOCAL_PLANS_POSES_TOPIC "agents_local_plans_poses"
+#define AGENT_LOCAL_PLANS_FP_POSES_TOPIC "agents_local_plans_fp_poses"
+#define ROBOT_FP_POSES_NS "robot_fp_poses"
+#define AGENT_FP_POSES_NS "agents_fp_poses"
+#define ROBOT_TRAJ_TIME_TOPIC "traj_time"
+#define ROBOT_PATH_TIME_TOPIC "plan_time"
+#define AGENT_TRAJS_TIME_TOPIC "agents_trajs_time"
+#define AGENT_PATHS_TIME_TOPIC "agents_plans_time"
+#define AGENT_MARKER_TOPIC "agent_marker"
+#define AGENT_ARROW_TOPIC "agent_arrow"
+#define ROBOT_NEXT_POSE_TOPIC "robot_next_pose"
+#define AGENT_NEXT_POSE_TOPIC "agent_next_pose"
+#define FEEDBACK_TOPIC "teb_feedback"
+#define TEB_MARKER_TOPIC "teb_markers"
+#define MODE_TEXT_TOPIC "mode_text"
+#define CROSSING_POINT_TOPIC "crossing_points"
+#define CROSSING_INFO_TOPIC "crossing_info"
+#define TTG_TOPIC "time_to_goal"
+#define TRACKED_AGENTS_SUB "/tracked_agents"
+#define CLEARING_TIMER_DURATION 1.0  // seconds
 
 namespace hateb_local_planner {
 
@@ -322,8 +352,26 @@ class TebVisualization {
    */
   static std_msgs::ColorRGBA toColorMsg(double a, double r, double g, double b);
 
+  /**
+   * @brief Publish crossing poses for the given robot and human TEBs
+   * @param teb The TEB for the robot
+   * @param agents_tebs_map A map of agent IDs to their respective TEBs
+   */
+  void publishCrossingPoses(const TimedElasticBand& teb, const std::map<uint64_t, TimedElasticBand>& agents_tebs_map);
+
+  /**
+   * @brief Set the color of a visualization marker (for fp_poses)
+   * @param marker The marker to modify
+   * @param itr The current index of the marker
+   * @param n The total number of poses (length of trajectory)
+   */
   static void setMarkerColour(visualization_msgs::Marker& marker, double itr, double n);
-  void publishMode(int Mode);
+
+  /**
+   * @brief Publish the current mode of the planner
+   * @param mode The current mode to publish
+   */
+  void publishMode(int mode);
 
  protected:
   /**
@@ -359,6 +407,7 @@ class TebVisualization {
   ros::Publisher agent_paths_time_pub_;                              //!< Publisher for agents' full time to goal (until goal, using path + traj)
   ros::Publisher agent_marker_pub_;                                  //!< Publisher for agent visualization markers
   ros::Publisher agent_arrow_pub_;                                   //!< Publisher for agent direction arrow markers
+  ros::Publisher crossing_point_pub_, crossing_info_pub_;            //!< Publisher for crossing points and crossing info
   ros::Subscriber tracked_agents_sub_;                               //!< Subscriber for tracked agents data input
   std::vector<double> vel_robot_;                                    //!< Store robot velocity history (for bar visualization)
   std::vector<double> vel_agent_;                                    //!< Store agent velocity history (for bar visualization)
