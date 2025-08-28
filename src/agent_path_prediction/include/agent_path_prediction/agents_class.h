@@ -54,7 +54,7 @@
 
 // Constants
 #define CALC_EPS 0.0001
-#define COST_MIN 200
+#define COST_MIN 250
 #define COST_OBS 255
 #define MAX_PTS 1000
 #define MIN_PTS 100

@@ -313,7 +313,7 @@ std::vector<int> Agents::filterVisibleAgents(std::map<int, geometry_msgs::Pose> 
         unsigned int mx;
         unsigned int my;
 
-        double check_rad = agents_radii[it] + 0.1 + inflation_radius_;
+        double check_rad = agents_radii[it] + 0.1;  // adding a small buffer
 
         if (sqrt(((x - tm_x) * (x - tm_x)) + ((y - tm_y) * (y - tm_y))) <= check_rad) {
           break;
