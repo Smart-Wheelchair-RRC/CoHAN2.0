@@ -22,11 +22,17 @@ The documentation for this repo can be found here: [CoHAN2.0_Docs](https://laas-
 	```
 	sudo apt install python-pip python-catkin-tools python-is-python3
 	pip install scipy
+ 	sudo apt-get install ros-noetic-ivcon ros-noetic-convex-decomposition
+ 	sudo apt-get install ros-noetic-teb-local-planner
+ 	sudo apt-get install libopenblas-dev
 	```
 4. Clone the git repository
 	```
-	git clone https://github.com/sphanit/cohan2.1.git -b main ~
-	cd ~/cohan2.1
+ 	cd src
+ 	git clone https://github.com/rst-tu-dortmund/costmap_converter.git
+	git clone https://github.com/PR2/pr2_common.git
+	git clone https://github.com/LAAS-HRI/CoHAN2.0.git
+ 	cd ..
 	```
 5. Install the dependencies using rosdep
 	```
@@ -34,6 +40,12 @@ The documentation for this repo can be found here: [CoHAN2.0_Docs](https://laas-
     ```
 
 6. Follow the build instructions below.
+	```
+ 	catkin_make
+ 	```
+ If you run into an error about Include msg, do
+ 
+  	catkin_make -j 1
 
 
 
