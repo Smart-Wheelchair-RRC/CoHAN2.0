@@ -26,6 +26,7 @@ class TrackAgent:
         # Initialize ROS objects
         self.agent_type = TrackedAgent.MOVING
         self.segment_type = TrackedSegmentType.TORSO
+        self.num_closest_agents = rospy.get_param("num_closest_agents", default=10)
 
         self.tf_buffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tf_buffer)
@@ -58,11 +59,11 @@ class TrackAgent:
                 robot.pose.orientation.z,
                 robot.pose.orientation.w,
             )
-            return (t, q)
+            return self.get_tf_matrix(t, q)
         except rospy.ServiceException:
             rospy.logwarn("/gazebo/get_model_state service call failed")
 
-    def get_map_to_base_link_tf(self):
+    def get_base_link_to_map_tf(self):
         try:
             # lookup transform from map → base_link
             trans: TransformStamped = self.tf_buffer.lookup_transform(
@@ -83,9 +84,7 @@ class TrackAgent:
                 trans.transform.rotation.w,
             )
 
-            return (t, q)
-
-            # rospy.loginfo(f"map→base_link: ({x:.2f}, {y:.2f}, {z:.2f}) | quat=({qx:.2f}, {qy:.2f}, {qz:.2f}, {qw:.2f})")
+            return self.get_tf_matrix(t, q)
 
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
             rospy.logwarn(f"TF error: {e}")
@@ -96,13 +95,6 @@ class TrackAgent:
 
         (_, _, pos[2]) = tf.transformations.euler_from_quaternion(q)
 
-        # homogeneous transformation matrix: map_T_robot
-        # R = np.array(
-        #     [
-        #         [np.cos(pos[2]), -np.sin(pos[2])],
-        #         [np.sin(pos[2]), np.cos(pos[2])],
-        #     ]
-        # )
         T = np.array(
             [
                 [np.cos(pos[2]), -np.sin(pos[2]), pos[0]],
@@ -111,30 +103,25 @@ class TrackAgent:
             ]
         )
 
-        # R_inv = np.linalg.inv(R)
         T_inv = np.linalg.inv(T)
 
         return T_inv
 
-    def get_gazebo_to_map_tf(self):
-        base_to_gazebo = self.get_robot_states_gazebo()
-        map_to_base = self.get_map_to_base_link_tf()
-
-        if base_to_gazebo and map_to_base:
-            t1, q1 = base_to_gazebo
-            t2, q2 = map_to_base
-
-            T1 = self.get_tf_matrix(t1, q1)
-            T2 = self.get_tf_matrix(t2, q2)
-
-            return T1 @ T2
+    def ped_callback(self, peds_msg: TrackedPersons):
+        if self.num_closest_agents > -1 or self.num_closest_agents > len(peds_msg.tracks):
+            self.closest_ped_callback(peds_msg)
+        else:
+            self.all_ped_callback(peds_msg)
 
     # Callback function for the path subscriber
-    def ped_callback(self, peds_msg: TrackedPersons):
-        gazebo_T_map = self.get_gazebo_to_map_tf()
+    def all_ped_callback(self, peds_msg: TrackedPersons):
+        gazebo_T_base = self.get_robot_states_gazebo()
+        base_T_map = self.get_base_link_to_map_tf()
 
-        if gazebo_T_map is not None:
+        if np.any(gazebo_T_base) and np.any(base_T_map):
             # get pedestrian poses and velocities:
+            gazebo_T_map = gazebo_T_base @ base_T_map
+
             cohan_agents = TrackedAgents()
             cohan_agents.header.frame_id = "map"
             cohan_agents.header.stamp = rospy.Time.now()
@@ -160,14 +147,78 @@ class TrackAgent:
                 segment.twist.twist.linear.x = ped_vel_in_robot[0]
                 segment.twist.twist.linear.y = ped_vel_in_robot[1]
 
-                # for ped in peds_msg.tracks:
-
-                # agent.radius = 0.1
                 agent.segments.append(segment)
 
                 cohan_agents.agents.append(agent)
 
             self.track_agent_pub.publish(cohan_agents)
+
+    def closest_ped_callback(self, peds_msg: TrackedPersons):
+        # gazebo_T_map = self.get_gazebo_to_map_tf()
+        gazebo_T_base = self.get_robot_states_gazebo()
+        base_T_map = self.get_base_link_to_map_tf()
+
+        if np.any(gazebo_T_base) and np.any(base_T_map):
+            # get pedestrian poses and velocities:
+            pose_array = []
+            vel_array = []
+            track_ids = []
+
+            for ped in peds_msg.tracks:
+                #
+                # relative positions and velocities:
+                ped_pos = np.array([ped.pose.pose.position.x, ped.pose.pose.position.y, 1])
+                ped_vel = np.array([ped.twist.twist.linear.x, ped.twist.twist.linear.y])
+                ped_pos_in_robot = np.matmul(gazebo_T_base, ped_pos.T)
+                ped_vel_in_robot = np.matmul(gazebo_T_base[:2, :2], ped_vel.T)
+
+                pose_array.append(ped_pos_in_robot)
+                vel_array.append(ped_vel_in_robot)
+                track_ids.append(ped.track_id)
+
+            pose_array = np.array(pose_array)
+            vel_array = np.array(vel_array)
+            track_ids = np.array(track_ids)
+            closest_indices = self.get_closest_pose_indices(pose_array)
+
+            close_poses = pose_array[closest_indices]
+
+            close_vels = vel_array[closest_indices]
+            tracks = track_ids[closest_indices]
+
+            cohan_agents = TrackedAgents()
+            cohan_agents.header.frame_id = "map"
+            cohan_agents.header.stamp = rospy.Time.now()
+
+            for i in range(self.num_closest_agents):
+                agent = TrackedAgent()
+                agent.track_id = tracks[i]
+                agent.name = f"human{agent.track_id}"
+                agent.type = self.agent_type
+
+                # pos = np.array([close_poses[i, 0], close_poses[i, 1], 1])
+                pos = np.matmul(base_T_map, close_poses[i].T)
+
+                vel = np.matmul(base_T_map[:2, :2], close_vels[i].T)
+
+                segment = TrackedSegment()
+                segment.type = self.segment_type
+                segment.pose.pose.position.x = pos[0]
+                segment.pose.pose.position.y = pos[1]
+                segment.twist.twist.linear.x = vel[0]
+                segment.twist.twist.linear.y = vel[1]
+
+                agent.segments.append(segment)
+
+                cohan_agents.agents.append(agent)
+
+            self.track_agent_pub.publish(cohan_agents)
+
+    def get_closest_pose_indices(self, poses):
+        dist = np.hypot(poses[:, 0], poses[:, 1])
+        # print(dist.shape)
+        indices = np.argsort(dist)
+        return indices[0 : self.num_closest_agents]
 
 
 if __name__ == "__main__":

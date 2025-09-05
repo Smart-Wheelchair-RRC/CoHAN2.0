@@ -1,7 +1,7 @@
 <launch>
 
   <arg name="ns" default=""/>
-  <arg name="num_agents" default="2"/>
+  <arg name="num_closest_agents" default="5"/>
 
   <!-- ****************************************************************************** -->
   <!-- *         Two different settings to avoid '/' in tf2 frames                  * -->
@@ -10,7 +10,9 @@
   <!-- Without namespace -->
   <group if="$(eval ''==arg('ns'))">
     <!-- Pedsim agents to /tracked_agents -->
-    <node name="pedsim_to_cohan_agents" pkg="pedsim_cohan" type="pedsim_to_cohan_agents.py" />
+    <node name="pedsim_to_cohan_agents" pkg="pedsim_cohan" type="pedsim_to_cohan_agents.py">
+      <param name="num_closest_agents" value="$(arg num_closest_agents)"/>
+    </node>
 
     <!-- agent pose prediction, for the local-planning -->
     <node pkg="agent_path_prediction" type="agent_path_predict" name="agent_path_predict" output="screen" >
@@ -26,7 +28,9 @@
   <!-- With namespace -->
   <group unless="$(eval ''==arg('ns'))">
     <!-- Pedsim agents to /tracked_agents -->
-    <node name="pedsim_to_cohan_agents" pkg="pedsim_cohan" type="pedsim_to_cohan_agents.py" />
+    <node name="pedsim_to_cohan_agents" pkg="pedsim_cohan" type="pedsim_to_cohan_agents.py">
+      <param name="num_closest_agents" value="$(arg num_closest_agents)"/>
+    </node>
 
     <!-- agent pose prediction, for the local-planning -->
     <node pkg="agent_path_prediction" type="agent_path_predict" name="agent_path_predict" output="screen" >

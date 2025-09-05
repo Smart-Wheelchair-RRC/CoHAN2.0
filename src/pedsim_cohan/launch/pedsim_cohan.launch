@@ -1,7 +1,7 @@
 <launch>
   <arg name="fast_mode" default="false"/>
   <arg name="node_start_delay" default="4.0"/>
-  <arg name="num_agents" default="2"/>
+  <arg name="num_closest_agents" default="5"/>
 
   <arg name="scene_file" default="$(find pedsim_simulator)/scenarios/cumberland.xml"/>
   <arg name="world_name" default="$(find pedsim_gazebo_plugin)/worlds/cumberland.world"/>
@@ -35,7 +35,7 @@
 <!-- Launch the cohan navigation node for robot along with the supporting nodes -->
 
   <include file="$(find pedsim_cohan)/launch/include/agent_tracking.launch">
-    <arg name="num_agents" value="$(arg num_agents)"/>
+    <arg name="num_closest_agents" value="$(arg num_closest_agents)"/>
   </include>
 
   <include file="$(find cohan_stage_navigation)/launch/include/move_base_nav.launch">
