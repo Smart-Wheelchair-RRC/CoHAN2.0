@@ -8,4 +8,5 @@ uint64              track_id
 int8                state
 int8                type
 string              name
+float64             radius
 TrackedSegment[]    segments

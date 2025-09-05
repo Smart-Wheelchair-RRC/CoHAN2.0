@@ -1,0 +1,45 @@
+<launch>
+
+  <arg name="ns" default=""/>
+  <arg name="num_agents" default="2"/>
+
+  <!-- ****************************************************************************** -->
+  <!-- *         Two different settings to avoid '/' in tf2 frames                  * -->
+  <!-- ****************************************************************************** -->
+
+  <!-- Without namespace -->
+  <group if="$(eval ''==arg('ns'))">
+    <!-- Pedsim agents to /tracked_agents -->
+    <node name="pedsim_to_cohan_agents" pkg="pedsim_cohan" type="pedsim_to_cohan_agents.py" />
+
+    <!-- agent pose prediction, for the local-planning -->
+    <node pkg="agent_path_prediction" type="agent_path_predict" name="agent_path_predict" output="screen" >
+      <param name="goals_file" value="$(find agent_path_prediction)/cfg/goals_adream.yaml"/>
+    </node>
+
+    <!-- Filter the agents from laser scan -->
+    <node pkg="pedsim_cohan" type="agent_filter.py" name="agent_laser_filter" output="screen"
+        args="$(arg ns)" launch-prefix="bash -c 'sleep 1.0; $0 $@' ">
+    </node>
+  </group>
+
+  <!-- With namespace -->
+  <group unless="$(eval ''==arg('ns'))">
+    <!-- Pedsim agents to /tracked_agents -->
+    <node name="pedsim_to_cohan_agents" pkg="pedsim_cohan" type="pedsim_to_cohan_agents.py" />
+
+    <!-- agent pose prediction, for the local-planning -->
+    <node pkg="agent_path_prediction" type="agent_path_predict" name="agent_path_predict" output="screen" >
+      <param name="ns" value="$(arg ns)"/>
+      <remap from="map" to="/map"/>
+      <param name="~robot_frame_id" value="$(arg ns)/base_footprint"/>
+      <param name="goals_file" value="$(find agent_path_prediction)/cfg/goals_adream.yaml"/>
+    </node>
+
+    <!-- Filter the agents from laser scan -->
+    <node pkg="pedsim_cohan" type="agent_filter.py" name="agent_laser_filter" output="screen"
+        args="$(arg ns)" launch-prefix="bash -c 'sleep 1.0; $0 $@' ">
+    </node>
+  </group>
+
+</launch>

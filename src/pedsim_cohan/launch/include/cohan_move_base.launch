@@ -3,6 +3,7 @@
   <arg name="node_start_delay" default="4.0" />
   <arg name="bt_xml" default="all_modes.xml"/>
   <arg name="cmd_vel_topic" default="/cmd_vel"/>
+  <arg name="odom_topic" default="/odom"/>
 
   <!-- ****************************************************************************** -->
   <!-- *         Two different settings to avoid '/' in tf2 frames                  * -->
@@ -10,6 +11,8 @@
   <group if="$(eval ''==arg('ns'))">
     <!-- move_base node with hateb -->
     <node pkg="move_base" type="move_base" name="move_base" output="screen" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
+      <!-- <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+      <remap from="odom" to="$(arg odom_topic)"/> -->
       <param name="base_global_planner" value="global_planner/GlobalPlanner" />
       <param name="base_local_planner" value="hateb_local_planner/HATebLocalPlannerROS" />
       <param name="GlobalPlanner/allow_unknown" value="true" />
@@ -20,9 +23,6 @@
       <rosparam file="$(find cohan_stage_navigation)/config/robot/global_costmap_params.yaml" command="load" ns="global_costmap"/>
       <rosparam file="$(find cohan_stage_navigation)/config/robot/local_costmap_params.yaml" command="load" ns="local_costmap"/>
       <rosparam file="$(find cohan_stage_navigation)/config/robot/hateb_local_planner_params.yaml" command="load" ns="HATebLocalPlannerROS" />
-
-      <remap to="$(arg cmd_vel_topic)" from="cmd_vel"/>
-      
     </node>
   </group>
 
@@ -30,6 +30,8 @@
     <!-- move_base node with hateb with namespace-->
     <node pkg="move_base" type="move_base" name="move_base" output="screen" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@';">
       <remap from="map" to="/map"/>
+      <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+      <remap from="odom" to="$(arg odom_topic)"/>
 
       <param name="ns" value="$(arg ns)"/>
       <param name="base_global_planner" value="global_planner/GlobalPlanner" />
@@ -47,9 +49,6 @@
       <param name="global_costmap/robot_base_frame" value="$(arg ns)/base_link"/>
       <param name="local_costmap/robot_base_frame" value="$(arg ns)/base_link"/>
       <param name="local_costmap/global_frame" value="$(arg ns)/odom"/>
-
-      <remap to="$(arg ns)/$(arg cmd_vel_topic)" from="cmd_vel"/>
-
     </node>
   </group>
 
