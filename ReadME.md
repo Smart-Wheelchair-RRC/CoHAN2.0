@@ -31,7 +31,7 @@ The documentation for this repo can be found here: [CoHAN2.0_Docs](https://laas-
  	cd src
  	git clone https://github.com/rst-tu-dortmund/costmap_converter.git
 	git clone https://github.com/PR2/pr2_common.git
-	git clone https://github.com/LAAS-HRI/CoHAN2.0.git
+	git clone https://github.com/LAAS-HRI/CoHAN2.0.git --recursive
  	cd ..
 	```
 5. Install the dependencies using rosdep
@@ -47,6 +47,21 @@ The documentation for this repo can be found here: [CoHAN2.0_Docs](https://laas-
  
   	catkin_make -j 1
 
+
+#  Running Example
+
+You can run an example as:
+```
+roslaunch cohan_stage_navigation stage_pr2.launch
+``` 
+If everything is installed correctly, you should see rviz opening and you can move the robot by giving it a goal (using 2D Nav Goal tool).
+
+#  Pedsim Example
+You can run the pedsim example as:
+```
+roslaunch pedsim_cohan pedsim_cohan.launch num_closest_agents:=10
+```
+You can setup the number of closest agents to be considered while planning in Pedsim using the argument 'num_closest_agents'. If you pass -1, it will consider all the agents, but the planning may become very slow.
 
 
 # Using Docker
@@ -65,22 +80,6 @@ The documentation for this repo can be found here: [CoHAN2.0_Docs](https://laas-
     source ~/cohan2.1/docker/noetic/run-docker.sh
     ```
 
-
-# Building Cohan and Running Examples
-1. Everything will be taken care of by the script. Just run compile.sh script.
-    ```
-    ./compile.sh
-    ```
-2. Once it is built, you need to source setup.bash file to use these packages along with other ROS packages inside the system.
-    ```
-    source devel/setup.bash
-    ```
-3. Now you are set to run use it. You can run some examples as:
-
-    ```
-    roslaunch cohan_stage_navigation stage_pr2_only.launch
-    ``` 
-    If everything is installed correctly, you should see rviz opening and you can move the robot by giving it a goal (using 2D Nav Goal tool).
 
 # Bibtex
 ```
