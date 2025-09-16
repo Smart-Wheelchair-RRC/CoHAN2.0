@@ -329,7 +329,7 @@ bool TebOptimalPlanner::plan(const std::vector<geometry_msgs::PoseStamped> &init
 
         // isMode = initial_agent_plan_vel_kv.second.isMode;
         // erase agent-teb if agent plan is empty
-        if (initial_agent_plan.empty() || initial_agent_plan[0].header.frame_id == "static") {
+        if (initial_agent_plan.empty()) {
           auto itr = agents_tebs_map_.find(agent_id);
           if (itr != agents_tebs_map_.end()) {
             ROS_DEBUG(
@@ -338,7 +338,14 @@ bool TebOptimalPlanner::plan(const std::vector<geometry_msgs::PoseStamped> &init
             agents_tebs_map_.erase(itr);
           }
 
+          continue;
+        } else if (!initial_agent_plan.empty()) {
           if (initial_agent_plan[0].header.frame_id == "static") {
+            auto itr = agents_tebs_map_.find(agent_id);
+            if (itr != agents_tebs_map_.end()) {
+              ROS_DEBUG("New plan: new agent plan is empty. Removing agent trajectories.");
+              agents_tebs_map_.erase(itr);
+            }
             static_agents_.push_back(initial_agent_plan[0].pose);
           }
 
