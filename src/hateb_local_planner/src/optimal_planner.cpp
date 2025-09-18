@@ -347,9 +347,8 @@ bool TebOptimalPlanner::plan(const std::vector<geometry_msgs::PoseStamped> &init
               agents_tebs_map_.erase(itr);
             }
             static_agents_.push_back(initial_agent_plan[0].pose);
+            continue;
           }
-
-          continue;
         }
 
         agent_nominal_vels_.push_back(initial_agent_plan_vel_kv.second.nominal_vel);
