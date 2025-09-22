@@ -3,14 +3,15 @@
   <arg name="node_start_delay" default="4.0"/>
   <arg name="num_closest_agents" default="5"/>
 
-  <arg name="scene_file" default="$(find pedsim_simulator)/scenarios/cumberland.xml"/>
-  <arg name="world_name" default="$(find pedsim_gazebo_plugin)/worlds/cumberland.world"/>
+  <arg name="scene_file" default="$(find pedsim_simulator)/scenarios/lobby/eng_hall_25.xml"/>
+  <arg name="world_name" default="$(find robot_gazebo)/worlds/gazebo_eng_lobby.world"/>
   <arg name="gui" default="true" doc="Bring up the Gazebo graphical interface"/>
-  <arg name="pose_initial_x" default="4"/>
-  <arg name="pose_initial_y" default="8"/>
-  <arg name="map_file" default="$(find robot_gazebo)/maps/gazebo_cumberland/gazebo_cumberland.yaml"/>
-  <arg name="initial_pose_x" default="4.0"/>
-  <arg name="initial_pose_y" default="8.0"/>
+  <!-- lobby: (1,1); square: (1,1); cumberland: (4,8); autolab: (1,8); freiburg: (3,17) -->
+  <arg name="pose_initial_x" default="1"/>
+  <arg name="pose_initial_y" default="1"/>
+  <arg name="map_file" default="$(find robot_gazebo)/maps/gazebo_eng_lobby/old/gazebo_eng_lobby.yaml"/>
+  <arg name="initial_pose_x" default="1.0"/>
+  <arg name="initial_pose_y" default="0.0"/>
   <arg name="initial_pose_a" default="0.13"/>
 
   <!-- Use sim time for simulator -->
@@ -38,7 +39,7 @@
     <arg name="num_closest_agents" value="$(arg num_closest_agents)"/>
   </include>
 
-  <include file="$(find cohan_stage_navigation)/launch/include/move_base_nav.launch">
+  <include file="$(find pedsim_cohan)/launch/include/cohan_move_base.launch">
     <arg name="node_start_delay" value="$(arg node_start_delay)"/>
     <arg name="cmd_vel_topic" value="/cmd_vel_mux/input/navi" />
   </include>
@@ -48,5 +49,7 @@
 
   <!-- Rviz -->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find pedsim_cohan)/rviz/pedsim_cohan.rviz" />
+
+  <node name="goal_distance_checker" pkg="flownav_pkg" type="reached_goal_tf.py"/>
 
 </launch>
