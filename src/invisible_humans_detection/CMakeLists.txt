@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_eigen
   nav_msgs
   cohan_msgs
+  costmap_converter
 )
 
 # Eigen3 FindScript Backward compatibility (ubuntu saucy)

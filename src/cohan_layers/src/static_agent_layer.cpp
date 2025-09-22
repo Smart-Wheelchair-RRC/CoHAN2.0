@@ -164,8 +164,8 @@ void StaticAgentLayer::updateCosts(costmap_2d::Costmap2D& /*master_grid*/, int m
           costmap->setCost(i + mx, j + my, std::max(cvalue, old_cost));
 
         }
-        // else if (is_human_still && state > 2) { // This removes costmap while human is moving and could cause issues with planning
-        else {
+        else if (is_human_still && state > 2) { // This removes costmap while human is moving and could cause issues with planning
+        //else {
           double x;
           double y;
           costmap->mapToWorld(i + mx, j + my, x, y);

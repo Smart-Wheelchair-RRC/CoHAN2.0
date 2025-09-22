@@ -101,6 +101,9 @@ void AgentLayer::updateBounds(double /*origin_x*/, double /*origin_y*/, double /
   }
 
   for (auto& agent : agents_.agents) {
+    if ((ros::Time::now() - agents_.header.stamp).toSec() > 0.1) {
+      continue;
+    }
     for (auto& segment : agent.segments) {
       if ((segment.type == DEFAULT_AGENT_PART) && !reset_) {
         if (!states_.empty() && !shutdown_) {
@@ -118,7 +121,7 @@ void AgentLayer::updateBounds(double /*origin_x*/, double /*origin_y*/, double /
               before_pose.pose = segment.pose.pose;
               before_pose.header.frame_id = agents_.header.frame_id;
               before_pose.header.stamp = agents_.header.stamp;
-              tf_->transform(before_pose, after_pose, global_frame, ros::Duration(0.));
+              tf_->transform(before_pose, after_pose, global_frame, ros::Duration(0.5));
               agent_pose_vel.pose = after_pose.pose;
 
               before_pose.pose.position.x += segment.twist.twist.linear.x;
@@ -127,7 +130,7 @@ void AgentLayer::updateBounds(double /*origin_x*/, double /*origin_y*/, double /
               tf2::Quaternion quat;
               quat.setEuler(segment.twist.twist.angular.z + hb_yaw, 0.0, 0.0);
               tf2::convert(before_pose.pose.orientation, quat);
-              tf_->transform(before_pose, after_pose, global_frame, ros::Duration(0.));
+              tf_->transform(before_pose, after_pose, global_frame, ros::Duration(0.5));
               agent_pose_vel.velocity.linear.x = after_pose.pose.position.x - agent_pose_vel.pose.position.x;
               agent_pose_vel.velocity.linear.y = after_pose.pose.position.y - agent_pose_vel.pose.position.y;
               agent_pose_vel.velocity.angular.z = angles::shortest_angular_distance(tf2::getYaw(after_pose.pose.orientation), tf2::getYaw(agent_pose_vel.pose.orientation));
@@ -140,7 +143,7 @@ void AgentLayer::updateBounds(double /*origin_x*/, double /*origin_y*/, double /
               ROS_ERROR("Connectivity Error: %s\n", ex.what());
               continue;
             } catch (tf2::ExtrapolationException& ex) {
-              ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+              ROS_ERROR("Extrapolation Error ahaaa: %s\n", ex.what());
               continue;
             }
           }
@@ -156,7 +159,7 @@ void AgentLayer::updateBounds(double /*origin_x*/, double /*origin_y*/, double /
           before_pose.pose = segment.pose.pose;
           before_pose.header.frame_id = agents_.header.frame_id;
           before_pose.header.stamp = agents_.header.stamp;
-          tf_->transform(before_pose, after_pose, global_frame, ros::Duration(0.));
+          tf_->transform(before_pose, after_pose, global_frame, ros::Duration(0.5));
           agent_pose_vel.pose = after_pose.pose;
 
           before_pose.pose.position.x += segment.twist.twist.linear.x;
@@ -165,7 +168,7 @@ void AgentLayer::updateBounds(double /*origin_x*/, double /*origin_y*/, double /
           tf2::Quaternion quat;
           quat.setEuler(segment.twist.twist.angular.z + hb_yaw, 0.0, 0.0);
           tf2::convert(before_pose.pose.orientation, quat);
-          tf_->transform(before_pose, after_pose, global_frame, ros::Duration(0.));
+          tf_->transform(before_pose, after_pose, global_frame, ros::Duration(0.5));
           agent_pose_vel.velocity.linear.x = after_pose.pose.position.x - agent_pose_vel.pose.position.x;
           agent_pose_vel.velocity.linear.y = after_pose.pose.position.y - agent_pose_vel.pose.position.y;
           agent_pose_vel.velocity.angular.z = angles::shortest_angular_distance(tf2::getYaw(after_pose.pose.orientation), tf2::getYaw(agent_pose_vel.pose.orientation));
